@@ -3,9 +3,12 @@ import type { BurnedCdRecord } from '../../shared/types/burnedCd'
 import type { BurnedShelfCd } from '../../shared/types/cd'
 import { burnedCdStore } from '../utils/burnedCdStore'
 import { forgetCover, loadCover } from '../utils/loadCover'
+import { usePlaybackStore } from './usePlaybackStore'
 
 type BurnedCdsDeps = {
   list: () => Promise<BurnedCdRecord[]>
+  deleteRecord: (id: string) => Promise<void>
+  eject: (id: string) => void
   createUrl: (blob: Blob) => string
   revokeUrl: (url: string) => void
   decodeCover: (url: string, title: string) => Promise<unknown>
@@ -16,10 +19,13 @@ type BurnedCdsStore = {
   burned: BurnedShelfCd[]
   refresh: () => Promise<void>
   forget: (id: string) => void
+  remove: (id: string) => Promise<void>
 }
 
 const DEFAULT_DEPS: BurnedCdsDeps = {
   list: burnedCdStore.list,
+  deleteRecord: burnedCdStore.remove,
+  eject: (id) => usePlaybackStore.getState().eject(id),
   createUrl: (blob) => URL.createObjectURL(blob),
   revokeUrl: (url) => URL.revokeObjectURL(url),
   decodeCover: loadCover,
@@ -28,8 +34,9 @@ const DEFAULT_DEPS: BurnedCdsDeps = {
 
 /**
  * @example
- * const store = createBurnedCdsStore({ list, createUrl, revokeUrl, decodeCover, forgetCover })
+ * const store = createBurnedCdsStore({ list, deleteRecord, eject, createUrl, revokeUrl, decodeCover, forgetCover })
  * await store.getState().refresh()
+ * await store.getState().remove(cd.id) // ejects it if current, deletes the record, then revokes its URLs
  */
 export function createBurnedCdsStore(deps: BurnedCdsDeps = DEFAULT_DEPS) {
   let latestRefresh = 0
@@ -77,6 +84,12 @@ export function createBurnedCdsStore(deps: BurnedCdsDeps = DEFAULT_DEPS) {
         deps.revokeUrl(cd.cover)
         deps.forgetCover(cd.cover)
       }
+    },
+    remove: async (id) => {
+      deps.eject(id)
+      await deps.deleteRecord(id)
+      get().forget(id)
+      await get().refresh()
     },
   }))
 }

@@ -2,6 +2,7 @@ import { Canvas } from '@react-three/fiber'
 import { type CSSProperties, lazy, Suspense, useEffect, useState } from 'react'
 import { renderScale } from '../../../common/utils/renderScale'
 import { BurnPanel } from '../../../music/view/components/BurnPanel/BurnPanel'
+import { CdRemoval } from '../../../music/view/components/CdRemoval'
 import { NowPlayingStrip } from '../../../music/view/components/NowPlayingStrip'
 import { useBurnedCdsStore } from '../../../music/view/hooks/useBurnedCdsStore'
 import { composeShelf, SHELF_SLOTS } from '../../shared/utils/composeShelf'
@@ -55,11 +56,15 @@ export function RoomViewPage() {
   return (
     <div className="room-view" ref={observeHeight} style={{ '--burn-band': `${burnPanelHeight}px` } as CSSProperties}>
       <Canvas
+        className="room-canvas"
         flat
         gl={{ antialias: false }}
         dpr={renderScale(targetHeight, containerHeight)}
         camera={{ fov: OVERVIEW_CAMERA.fov }}
-        onPointerMissed={back}
+        onPointerMissed={(event) => {
+          if (event.type === 'click') back()
+        }}
+        onContextMenu={(event) => event.preventDefault()}
       >
         <CameraRig shelfBandHeight={burnPanelHeight + BURN_BAND_GAP} />
         <RoomScene />
@@ -73,6 +78,7 @@ export function RoomViewPage() {
         />
       )}
       <NowPlayingStrip />
+      <CdRemoval />
       <RoomErrorBanner />
       {DevTools && (
         <Suspense fallback={null}>

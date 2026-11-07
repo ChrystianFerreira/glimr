@@ -3,6 +3,7 @@ import type { Vector3Tuple } from 'three'
 import { paint } from '../../../../common/utils/paintVertexColors'
 import { pointerCursor } from '../../../../common/utils/pointerCursor'
 import type { ShelfCd } from '../../../shared/types/cd'
+import { useCdRemovalStore } from '../../hooks/useCdRemovalStore'
 import { usePlaybackStore } from '../../hooks/usePlaybackStore'
 import { CD_SHELF_BACK_INSET, CD_SHELF_PANEL, CD_SHELF_ROW_FLOORS, CD_SHELF_SIZE } from '../../utils/cdShelfLayout'
 import { CdCase } from './CdCase'
@@ -58,6 +59,7 @@ function ShelfBody({ onClick }: { onClick: (event: ThreeEvent<MouseEvent>) => vo
 export function CdShelf({ cds, interactive, onFocusShelf, position, trayClickable, trayPosition }: CdShelfProps) {
   const select = usePlaybackStore((state) => state.select)
   const inTray = usePlaybackStore((state) => state.inTray)
+  const openMenu = useCdRemovalStore((state) => state.openMenu)
   const trayInShelf: Vector3Tuple = [
     trayPosition[0] - position[0],
     trayPosition[1] - position[1],
@@ -85,6 +87,7 @@ export function CdShelf({ cds, interactive, onFocusShelf, position, trayClickabl
           slotIndex={index}
           trayInShelf={trayInShelf}
           onClick={cd.id !== inTray || trayClickable ? clickCd(cd) : undefined}
+          onOpenMenu={interactive && cd.isBurned ? (x, y) => openMenu(cd, x, y) : undefined}
         />
       ))}
     </group>

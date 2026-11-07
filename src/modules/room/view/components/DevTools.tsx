@@ -1,9 +1,15 @@
 import { Stats } from '@react-three/drei'
 import { Leva, useControls } from 'leva'
+import { useState } from 'react'
 import { DEFAULT_ROOM_TUNING, useRoomTuningStore } from '../hooks/useRoomTuningStore'
+
+const LEVA_WIDTH = 280
+const LEVA_EDGE = 10
+const LEVA_BELOW_BACK = 44
 
 export default function DevTools() {
   const setTuning = useRoomTuningStore((state) => state.setTuning)
+  const [levaPosition] = useState(() => ({ x: LEVA_WIDTH + LEVA_EDGE * 2 - window.innerWidth, y: LEVA_BELOW_BACK }))
 
   useControls('Room', {
     targetHeight: {
@@ -47,7 +53,7 @@ export default function DevTools() {
 
   return (
     <>
-      <Leva collapsed />
+      <Leva collapsed titleBar={{ position: levaPosition }} />
       <Stats className="room-stats" />
     </>
   )

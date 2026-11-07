@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { hasOpenOverlay } from '../../../common/utils/overlayStack'
 import { useRoomStore } from '../hooks/useRoomStore'
 
 function isTextField(target: EventTarget | null) {
@@ -15,7 +16,7 @@ export function BackButton() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !isTextField(event.target)) back()
+      if (event.key === 'Escape' && !hasOpenOverlay() && !isTextField(event.target)) back()
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)

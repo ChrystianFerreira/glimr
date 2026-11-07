@@ -30,6 +30,14 @@ function setup(stored: BurnedCdRecord[] = []) {
   const decodes = new Map<string, () => void>()
   const deps = {
     list: vi.fn(() => Promise.resolve([...stored])),
+    deleteRecord: vi.fn((id: string) => {
+      stored.splice(
+        stored.findIndex((cd) => cd.id === id),
+        1,
+      )
+      return Promise.resolve()
+    }),
+    eject: vi.fn<(id: string) => void>(),
     createUrl: vi.fn((blob: Blob) => {
       const url = `blob:${next++}`
       urls.set(blob, url)
@@ -157,5 +165,30 @@ describe('useBurnedCdsStore', () => {
     await first
 
     expect(store.getState().burned.map((cd) => cd.id)).toEqual(['burned-0', 'burned-1'])
+  })
+
+  it('removes a CD: ejects it, deletes its record, then revokes its URLs, and later CDs move up', async () => {
+    const { store, deps } = setup([record(0), record(1), record(2)])
+    await store.getState().refresh()
+    const { audio } = store.getState().burned[1] ?? {}
+
+    await store.getState().remove('burned-1')
+
+    expect(deps.eject).toHaveBeenCalledWith('burned-1')
+    expect(deps.eject.mock.invocationCallOrder[0]).toBeLessThan(deps.deleteRecord.mock.invocationCallOrder[0] ?? 0)
+    expect(deps.deleteRecord.mock.invocationCallOrder[0]).toBeLessThan(deps.revokeUrl.mock.invocationCallOrder[0] ?? 0)
+    expect(deps.revokeUrl).toHaveBeenCalledWith(audio)
+    expect(store.getState().burned.map((cd) => cd.id)).toEqual(['burned-0', 'burned-2'])
+  })
+
+  it('keeps the CD and its URLs when deleting the record fails', async () => {
+    const { store, deps } = setup([record(0)])
+    await store.getState().refresh()
+    deps.deleteRecord.mockRejectedValueOnce(new Error('blocked'))
+
+    await expect(store.getState().remove('burned-0')).rejects.toThrow('blocked')
+
+    expect(store.getState().burned.map((cd) => cd.id)).toEqual(['burned-0'])
+    expect(deps.revokeUrl).not.toHaveBeenCalled()
   })
 })
