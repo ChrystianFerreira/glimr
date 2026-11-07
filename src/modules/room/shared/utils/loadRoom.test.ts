@@ -75,6 +75,75 @@ describe('loadRoom', () => {
     expect(fetchStub).not.toHaveBeenCalledWith('/room.example.json')
   })
 
+  it('returns unreachable for a non-404 HTTP error on /room.json and does not fall back', async () => {
+    const fetchStub = serve({
+      '/room.json': () => new Response('boom', { status: 500 }),
+      '/room.example.json': () => jsonResponse(exampleRoom),
+    })
+
+    const result = await loadRoom()
+
+    expect(result.ok).toBe(false)
+    expect(!result.ok && result.error).toMatchObject({
+      reason: 'unreachable',
+      source: '/room.json',
+      message: 'HTTP 500',
+    })
+    expect(fetchStub).not.toHaveBeenCalledWith('/room.example.json')
+  })
+
+  it('returns unreachable when fetching /room.json rejects and does not fall back', async () => {
+    const fetchStub = serve({ '/room.example.json': () => jsonResponse(exampleRoom) })
+    fetchStub.mockRejectedValueOnce(new TypeError('Failed to fetch'))
+
+    const result = await loadRoom()
+
+    expect(result.ok).toBe(false)
+    expect(!result.ok && result.error.reason).toBe('unreachable')
+    expect(!result.ok && result.error.source).toBe('/room.json')
+    expect(!result.ok && result.error.message).toContain('Failed to fetch')
+    expect(fetchStub).not.toHaveBeenCalledWith('/room.example.json')
+  })
+
+  it('returns Not found against /room.example.json when both sources are 404', async () => {
+    const fetchStub = serve({})
+
+    const result = await loadRoom()
+
+    expect(result.ok).toBe(false)
+    expect(!result.ok && result.error).toMatchObject({
+      reason: 'unreachable',
+      source: '/room.example.json',
+      message: 'Not found',
+    })
+    expect(fetchStub).toHaveBeenCalledTimes(2)
+  })
+
+  it('returns invalid-room with the failing path for a schema-invalid room and does not fall back', async () => {
+    const fetchStub = serve({
+      '/room.json': () => jsonResponse({ ...exampleRoom, version: 2 }),
+      '/room.example.json': () => jsonResponse(exampleRoom),
+    })
+
+    const result = await loadRoom()
+
+    expect(result.ok).toBe(false)
+    expect(!result.ok && result.error.reason).toBe('invalid-room')
+    expect(!result.ok && result.error.source).toBe('/room.json')
+    expect(!result.ok && result.error.path).toBe('version')
+    expect(fetchStub).not.toHaveBeenCalledWith('/room.example.json')
+  })
+
+  it('reports the nested path of a duplicate CD id as invalid-room', async () => {
+    serve({ '/room.json': () => jsonResponse({ ...exampleRoom, cds: [cd('a'), cd('a')] }) })
+
+    const result = await loadRoom()
+
+    expect(result.ok).toBe(false)
+    expect(!result.ok && result.error.reason).toBe('invalid-room')
+    expect(!result.ok && result.error.path).toBe('cds.1.id')
+  })
+
   it('parses thirteen CDs but slots only the first 12, with one console warning', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const ids = Array.from({ length: 13 }, (_, index) => `cd-${index + 1}`)
