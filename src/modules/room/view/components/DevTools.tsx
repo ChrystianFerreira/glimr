@@ -48,7 +48,7 @@ export default function DevTools() {
   return (
     <>
       <Leva collapsed />
-      <Stats />
+      <Stats className="room-stats" />
     </>
   )
 }

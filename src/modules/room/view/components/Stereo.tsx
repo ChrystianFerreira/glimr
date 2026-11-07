@@ -1,5 +1,5 @@
 import { paint } from '../../../common/utils/paintVertexColors'
-import { STEREO_POSITION, STEREO_SIZE, STEREO_TRAY_OFFSET } from '../utils/roomLayout'
+import { STEREO_HANDLE_HEIGHT, STEREO_POSITION, STEREO_SIZE, STEREO_TRAY_OFFSET } from '../utils/roomLayout'
 
 const BODY_COLOR = '#b9bcc6'
 const BODY_SHADOW = '#6c6f7d'
@@ -9,6 +9,7 @@ const DUST_CAP_COLOR = '#8d8a99'
 const TRAY_COLOR = '#16151c'
 const DISPLAY_COLOR = '#5ce6ff'
 const BUTTON_COLOR = '#ff8a3d'
+const HANDLE_BAR_THICKNESS = 0.035
 
 const front = STEREO_SIZE.depth / 2
 const speakerX = STEREO_SIZE.width / 2 - 0.17
@@ -60,8 +61,8 @@ export function Stereo() {
             <meshBasicMaterial vertexColors />
           </mesh>
         ))}
-        <mesh position={[0, 0.11, 0]}>
-          <boxGeometry args={[0.64, 0.035, 0.05]} ref={paint(GRILLE_COLOR)} />
+        <mesh position={[0, STEREO_HANDLE_HEIGHT - HANDLE_BAR_THICKNESS / 2, 0]}>
+          <boxGeometry args={[0.64, HANDLE_BAR_THICKNESS, 0.05]} ref={paint(GRILLE_COLOR)} />
           <meshBasicMaterial vertexColors />
         </mesh>
       </group>

@@ -5,6 +5,8 @@ import { loadRoom } from '../../shared/utils/loadRoom'
 import { useRoomStore } from '../hooks/useRoomStore'
 import { useRoomTuningStore } from '../hooks/useRoomTuningStore'
 import { OVERVIEW_CAMERA } from '../utils/roomLayout'
+import { BackButton } from './BackButton'
+import { CameraRig } from './CameraRig'
 import { RoomErrorBanner } from './RoomErrorBanner'
 import { RoomScene } from './RoomScene'
 
@@ -12,6 +14,7 @@ const DevTools = import.meta.env.DEV ? lazy(() => import('./DevTools')) : null
 
 export function RoomViewPage() {
   const setLoadResult = useRoomStore((state) => state.setLoadResult)
+  const back = useRoomStore((state) => state.back)
   const targetHeight = useRoomTuningStore((state) => state.targetHeight)
   const [containerHeight, setContainerHeight] = useState(0)
 
@@ -39,11 +42,13 @@ export function RoomViewPage() {
         flat
         gl={{ antialias: false }}
         dpr={renderScale(targetHeight, containerHeight)}
-        camera={{ position: OVERVIEW_CAMERA.position, fov: OVERVIEW_CAMERA.fov }}
-        onCreated={({ camera }) => camera.lookAt(...OVERVIEW_CAMERA.target)}
+        camera={{ fov: OVERVIEW_CAMERA.fov }}
+        onPointerMissed={back}
       >
+        <CameraRig />
         <RoomScene />
       </Canvas>
+      <BackButton />
       <RoomErrorBanner />
       {DevTools && (
         <Suspense fallback={null}>

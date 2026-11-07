@@ -6,6 +6,7 @@ export const DESK_POSITION: Vec3 = [1.55, 0, -2.6]
 export const DESK_SIZE = { width: 1.7, height: 0.76, depth: 0.7 }
 
 export const STEREO_SIZE = { width: 0.9, height: 0.42, depth: 0.26 }
+export const STEREO_HANDLE_HEIGHT = 0.13
 export const STEREO_POSITION: Vec3 = [DESK_POSITION[0], DESK_SIZE.height + STEREO_SIZE.height / 2, -2.7]
 export const STEREO_TRAY_OFFSET: Vec3 = [0, 0.09, STEREO_SIZE.depth / 2 + 0.005]
 export const STEREO_TRAY_POSITION: Vec3 = [
