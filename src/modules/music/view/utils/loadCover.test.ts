@@ -13,7 +13,7 @@ function fakeSteps(loadImage: (url: string) => Promise<HTMLImageElement>) {
     steps: {
       loadImage: vi.fn(loadImage),
       toTexture: vi.fn(() => cover),
-      placeholder: vi.fn(() => placeholder),
+      placeholder: vi.fn<(title: string) => Texture>(() => placeholder),
     },
   }
 }
