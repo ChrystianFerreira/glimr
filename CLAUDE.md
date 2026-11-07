@@ -16,6 +16,10 @@ Node 22 (`.nvmrc`).
 
 Vite + React 19 + React Compiler + React Three Fiber 9 + drei + zustand + zod + Vitest.
 
+## Versioning
+
+Semantic versioning (`MAJOR.MINOR.PATCH`), tracked in `package.json`. Pre-1.0, a new feature bumps MINOR and a fix bumps PATCH. Tag each release `vX.Y.Z`.
+
 ## Where things live
 
 - Conventions: `.claude/rules/`
