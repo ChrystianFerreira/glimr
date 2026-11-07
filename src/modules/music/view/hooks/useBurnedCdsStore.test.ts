@@ -137,6 +137,25 @@ describe('useBurnedCdsStore', () => {
     expect(deps.forgetCover).toHaveBeenCalledWith(cover)
   })
 
+  it('releases a CD whose record disappeared on refresh: ejects it and revokes its audio URL, keeping the rest', async () => {
+    const { store, stored, deps } = setup([record(0), record(1, true), record(2)])
+    await store.getState().refresh()
+    const [first, gone, last] = store.getState().burned
+    stored.splice(1, 1)
+
+    await store.getState().refresh()
+
+    expect(deps.eject).toHaveBeenCalledWith('burned-1')
+    expect(deps.revokeUrl).toHaveBeenCalledWith(gone?.audio)
+    expect(deps.forgetCover).toHaveBeenCalledWith(gone?.cover)
+    expect(store.getState().burned).toEqual([first, last])
+    expect(store.getState().burned[0]).toBe(first)
+    expect(store.getState().burned[1]).toBe(last)
+    expect(deps.createUrl).toHaveBeenCalledTimes(4)
+    expect(deps.revokeUrl).not.toHaveBeenCalledWith(first?.audio)
+    expect(deps.revokeUrl).not.toHaveBeenCalledWith(last?.audio)
+  })
+
   it('does not bring back a forgotten CD from a refresh that was already reading storage', async () => {
     const { store, deps } = setup([record(0), record(1)])
     await store.getState().refresh()

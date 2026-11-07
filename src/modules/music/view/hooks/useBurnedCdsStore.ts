@@ -48,6 +48,15 @@ export function createBurnedCdsStore(deps: BurnedCdsDeps = DEFAULT_DEPS) {
     return { isBurned: true, id, title, artist, audio: deps.createUrl(audio), cover, placeholderColor, burnedAt }
   }
 
+  const release = (cd: BurnedShelfCd) => {
+    deps.eject(cd.id)
+    deps.revokeUrl(cd.audio)
+    if (cd.cover) {
+      deps.revokeUrl(cd.cover)
+      deps.forgetCover(cd.cover)
+    }
+  }
+
   return create<BurnedCdsStore>()((set, get) => ({
     burned: [],
     refresh: async () => {
@@ -60,21 +69,20 @@ export function createBurnedCdsStore(deps: BurnedCdsDeps = DEFAULT_DEPS) {
         return
       }
       if (refresh !== latestRefresh) return
-      const known = new Map(get().burned.map((cd) => [cd.id, cd]))
+      const previous = get().burned
+      const known = new Map(previous.map((cd) => [cd.id, cd]))
+      const stored = new Set(records.map((record) => record.id))
       set({
         burned: records.filter((record) => !forgotten.has(record.id)).map((record) => known.get(record.id) ?? toShelfCd(record)),
       })
+      previous.filter((cd) => !stored.has(cd.id)).forEach(release)
     },
     forget: (id) => {
       forgotten.add(id)
       const cd = get().burned.find((burned) => burned.id === id)
       if (!cd) return
       set({ burned: get().burned.filter((burned) => burned.id !== id) })
-      deps.revokeUrl(cd.audio)
-      if (cd.cover) {
-        deps.revokeUrl(cd.cover)
-        deps.forgetCover(cd.cover)
-      }
+      release(cd)
     },
     remove: async (id) => {
       deps.eject(id)
