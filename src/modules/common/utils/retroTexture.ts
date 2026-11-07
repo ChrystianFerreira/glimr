@@ -1,6 +1,6 @@
 import { NearestFilter, NearestMipmapNearestFilter, SRGBColorSpace, type Texture } from 'three'
 
-export const RETRO_TEXTURE_MAX_SIZE = 256
+const RETRO_TEXTURE_MAX_SIZE = 256
 
 export function retroTexture<T extends Texture>(texture: T): T {
   texture.magFilter = NearestFilter

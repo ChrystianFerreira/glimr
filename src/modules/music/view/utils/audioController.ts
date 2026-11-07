@@ -17,7 +17,7 @@ type AudioControllerOptions = {
   createElement?: () => AudioElementLike
 }
 
-export type AudioController = {
+type AudioController = {
   play: (src: string) => void
   resume: () => void
   restart: () => void

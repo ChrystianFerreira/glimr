@@ -1,6 +1,8 @@
 import type { LoadRoomResult, RoomLoadError, RoomSource } from '../types/room'
 import { roomSchema } from './roomSchema'
 
+export const ROOM_SOURCES = ['/room.json', '/room.example.json'] as const
+
 const SHELF_SLOTS = 12
 
 type RoomFile =
@@ -56,10 +58,10 @@ function parseRoom(source: RoomSource, body: string): LoadRoomResult {
 }
 
 export async function loadRoom(): Promise<LoadRoomResult> {
-  for (const source of ['/room.json', '/room.example.json'] as const) {
+  for (const source of ROOM_SOURCES) {
     const file = await fetchRoomFile(source)
     if (file.status === 'failed') return { ok: false, error: file.error }
     if (file.status === 'found') return parseRoom(source, file.body)
   }
-  return { ok: false, error: roomError('/room.example.json', 'unreachable', 'Not found') }
+  return { ok: false, error: roomError(ROOM_SOURCES[ROOM_SOURCES.length - 1], 'unreachable', 'Not found') }
 }

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type RoomTuning = {
+type RoomTuning = {
   targetHeight: number
   fogNear: number
   fogFar: number

@@ -1,4 +1,5 @@
 import type { ThreeEvent } from '@react-three/fiber'
+import type { Vector3Tuple } from 'three'
 import { paint } from '../../../../common/utils/paintVertexColors'
 import { pointerCursor } from '../../../../common/utils/pointerCursor'
 import type { Cd } from '../../../shared/types/cd'
@@ -14,15 +15,13 @@ const KICK_HEIGHT = CD_SHELF_ROW_FLOORS.at(-1) ?? 0
 const { width, height, depth } = CD_SHELF_SIZE
 const innerWidth = width - CD_SHELF_PANEL * 2
 
-type Vec3 = [number, number, number]
-
 type CdShelfProps = {
   cds: Cd[]
   interactive: boolean
   onFocusShelf: () => void
-  position: Vec3
+  position: Vector3Tuple
   trayClickable: boolean
-  trayPosition: Vec3
+  trayPosition: Vector3Tuple
 }
 
 function ShelfBody({ onClick }: { onClick: (event: ThreeEvent<MouseEvent>) => void }) {
@@ -59,6 +58,11 @@ function ShelfBody({ onClick }: { onClick: (event: ThreeEvent<MouseEvent>) => vo
 export function CdShelf({ cds, interactive, onFocusShelf, position, trayClickable, trayPosition }: CdShelfProps) {
   const select = usePlaybackStore((state) => state.select)
   const inTray = usePlaybackStore((state) => state.inTray)
+  const trayInShelf: Vector3Tuple = [
+    trayPosition[0] - position[0],
+    trayPosition[1] - position[1],
+    trayPosition[2] - position[2],
+  ]
 
   const focusShelf = (event: ThreeEvent<MouseEvent>) => {
     event.stopPropagation()
@@ -79,7 +83,7 @@ export function CdShelf({ cds, interactive, onFocusShelf, position, trayClickabl
           key={cd.id}
           cd={cd}
           slotIndex={index}
-          trayPosition={trayPosition}
+          trayInShelf={trayInShelf}
           onClick={cd.id !== inTray || trayClickable ? clickCd(cd) : undefined}
         />
       ))}

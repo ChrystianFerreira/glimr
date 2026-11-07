@@ -1,6 +1,6 @@
-import { Color, type ColorRepresentation } from 'three'
+import { Color, type ColorRepresentation, type Vector3Tuple } from 'three'
 import { paint } from '../../../common/utils/paintVertexColors'
-import { DESK_POSITION, DESK_SIZE, ROOM_SIZE, type Vec3 } from '../utils/roomLayout'
+import { DESK_POSITION, DESK_SIZE, ROOM_SIZE } from '../utils/roomLayout'
 
 const WAINSCOT_HEIGHT = 0.9
 const CEILING_COLOR = '#d6cce0'
@@ -18,7 +18,7 @@ const POSTER_BOTTOM = '#ffd36b'
 const halfWidth = ROOM_SIZE.width / 2
 const halfDepth = ROOM_SIZE.depth / 2
 
-const WALLS: { position: Vec3; rotationY: number; width: number }[] = [
+const WALLS: { position: Vector3Tuple; rotationY: number; width: number }[] = [
   { position: [0, 0, -halfDepth], rotationY: 0, width: ROOM_SIZE.width },
   { position: [0, 0, halfDepth], rotationY: Math.PI, width: ROOM_SIZE.width },
   { position: [-halfWidth, 0, 0], rotationY: Math.PI / 2, width: ROOM_SIZE.depth },
@@ -39,7 +39,7 @@ export function RoomShell({ wallColor, wainscotColor, floorColor }: RoomShellPro
   const upperHeight = ROOM_SIZE.height - WAINSCOT_HEIGHT
 
   return (
-    <group>
+    <>
       <mesh rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[ROOM_SIZE.width, ROOM_SIZE.depth, 6, 6]} ref={paint(floorColor, darker(floorColor, 0.7))} />
         <meshBasicMaterial vertexColors />
@@ -121,6 +121,6 @@ export function RoomShell({ wallColor, wainscotColor, floorColor }: RoomShellPro
           </mesh>
         ))}
       </group>
-    </group>
+    </>
   )
 }

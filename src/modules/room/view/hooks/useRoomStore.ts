@@ -2,12 +2,12 @@ import { create } from 'zustand'
 import type { Cd } from '../../../music/shared/types/cd'
 import type { LoadRoomResult, Room, RoomLoadError, RoomSource } from '../../shared/types/room'
 
-export type RoomLoadState =
+type RoomLoadState =
   | { status: 'loading' }
   | { status: 'loaded'; room: Room; shelf: Cd[]; source: RoomSource }
   | { status: 'error'; error: RoomLoadError }
 
-export type FocusTarget = 'shelf' | 'stereo'
+type FocusTarget = 'shelf' | 'stereo'
 export type RoomFocus = 'overview' | FocusTarget
 
 type RoomStore = {

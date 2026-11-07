@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import type { Cd } from '../../shared/types/cd'
 import { type AudioElementLike, createAudioController } from '../utils/audioController'
 
-export type PlaybackStatus = 'idle' | 'playing' | 'paused' | 'stopped' | 'error'
+type PlaybackStatus = 'idle' | 'playing' | 'paused' | 'stopped' | 'error'
 
 type PlaybackStore = {
   status: PlaybackStatus

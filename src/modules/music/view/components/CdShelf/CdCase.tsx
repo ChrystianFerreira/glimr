@@ -1,6 +1,6 @@
 import { type ThreeEvent, useFrame } from '@react-three/fiber'
 import { Suspense, use, useRef } from 'react'
-import { Euler, type Group, MathUtils, Quaternion, type Texture, Vector3 } from 'three'
+import { Euler, type Group, MathUtils, Quaternion, type Texture, Vector3, type Vector3Tuple } from 'three'
 import { paint } from '../../../../common/utils/paintVertexColors'
 import { pointerCursor } from '../../../../common/utils/pointerCursor'
 import type { Cd } from '../../../shared/types/cd'
@@ -38,6 +38,10 @@ function CoverFace({ texture }: { texture: Texture }) {
   )
 }
 
+function PlaceholderCover({ title }: { title: string }) {
+  return <CoverFace texture={coverPlaceholder(title)} />
+}
+
 function LoadedCover({ cd }: { cd: Cd }) {
   return <CoverFace texture={use(loadCover(cd.cover, cd.title))} />
 }
@@ -45,30 +49,36 @@ function LoadedCover({ cd }: { cd: Cd }) {
 type CdCaseProps = {
   cd: Cd
   slotIndex: number
-  trayPosition: [number, number, number]
+  trayInShelf: Vector3Tuple
   onClick?: (event: ThreeEvent<MouseEvent>) => void
 }
 
-export function CdCase({ cd, slotIndex, trayPosition, onClick }: CdCaseProps) {
+export function CdCase({ cd, slotIndex, trayInShelf, onClick }: CdCaseProps) {
   const groupRef = useRef<Group>(null)
   const progressRef = useRef(0)
+  const settledRef = useRef<{ slot: Vector3Tuple; tray: Vector3Tuple } | null>(null)
   const slotPosition = cdSlotPosition(slotIndex)
 
   useFrame((_, delta) => {
     const group = groupRef.current
-    if (!group?.parent) return
+    if (!group) return
 
     const inTray = usePlaybackStore.getState().inTray === cd.id
+    const target = inTray ? 1 : 0
+    const settled = settledRef.current
+    if (progressRef.current === target && settled?.slot === slotPosition && settled.tray === trayInShelf) return
+
     const step = delta / TRAVEL_SECONDS
     progressRef.current = MathUtils.clamp(progressRef.current + (inTray ? step : -step), 0, 1)
     const t = MathUtils.smootherstep(progressRef.current, 0, 1)
 
     slot.set(...slotPosition)
-    group.parent.worldToLocal(tray.set(trayPosition[0], trayPosition[1], trayPosition[2] + TRAY_OUTSET))
+    tray.set(trayInShelf[0], trayInShelf[1], trayInShelf[2] + TRAY_OUTSET)
     group.position.lerpVectors(slot, tray, t)
     group.position.y += Math.sin(Math.PI * t) * ARC_HEIGHT
     group.quaternion.slerpQuaternions(SLOT_ROTATION, TRAY_ROTATION, t)
     group.scale.setScalar(MathUtils.lerp(1, TRAY_SCALE, t))
+    settledRef.current = progressRef.current === target ? { slot: slotPosition, tray: trayInShelf } : null
   })
 
   return (
@@ -81,7 +91,7 @@ export function CdCase({ cd, slotIndex, trayPosition, onClick }: CdCaseProps) {
         <boxGeometry args={[SPINE_WIDTH, CD_CASE_SIZE.height + 0.002, CD_CASE_SIZE.thickness + 0.004]} ref={paint(SPINE_COLOR)} />
         <meshBasicMaterial vertexColors />
       </mesh>
-      <Suspense fallback={<CoverFace texture={coverPlaceholder(cd.title)} />}>
+      <Suspense fallback={<PlaceholderCover title={cd.title} />}>
         <LoadedCover cd={cd} />
       </Suspense>
       <mesh visible={false}>

@@ -1,10 +1,11 @@
 import type { z } from 'zod'
 import type { Cd } from '../../../music/shared/types/cd'
+import type { ROOM_SOURCES } from '../utils/loadRoom'
 import type { roomSchema } from '../utils/roomSchema'
 
 export type Room = z.output<typeof roomSchema>
 
-export type RoomSource = '/room.json' | '/room.example.json'
+export type RoomSource = (typeof ROOM_SOURCES)[number]
 
 export type RoomLoadError = {
   reason: 'unreachable' | 'invalid-json' | 'invalid-room'

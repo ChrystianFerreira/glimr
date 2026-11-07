@@ -1,4 +1,4 @@
-import { MathUtils, Vector3 } from 'three'
+import { MathUtils, Vector3, type Vector3Tuple } from 'three'
 import type { RoomFocus } from '../hooks/useRoomStore'
 import {
   OVERVIEW_CAMERA,
@@ -7,14 +7,13 @@ import {
   STEREO_HANDLE_HEIGHT,
   STEREO_POSITION,
   STEREO_SIZE,
-  type Vec3,
 } from './roomLayout'
 
-export type Bounds = { min: Vec3; max: Vec3 }
+type Bounds = { min: Vector3Tuple; max: Vector3Tuple }
 
 type FocusPose = {
   bounds: Bounds
-  direction: Vec3
+  direction: Vector3Tuple
   minDistance: number
 }
 
@@ -44,8 +43,8 @@ const stereoBounds: Bounds = {
 
 function union(...all: Bounds[]): Bounds {
   return {
-    min: [0, 1, 2].map((axis) => Math.min(...all.map((bounds) => bounds.min[axis]!))) as Vec3,
-    max: [0, 1, 2].map((axis) => Math.max(...all.map((bounds) => bounds.max[axis]!))) as Vec3,
+    min: [0, 1, 2].map((axis) => Math.min(...all.map((bounds) => bounds.min[axis]!))) as Vector3Tuple,
+    max: [0, 1, 2].map((axis) => Math.max(...all.map((bounds) => bounds.max[axis]!))) as Vector3Tuple,
   }
 }
 
@@ -61,11 +60,11 @@ export const FOCUS_POSES: Record<RoomFocus, FocusPose> = {
   stereo: { bounds: stereoBounds, direction: [-0.3, 0.35, 1], minDistance: 0 },
 }
 
-export function boundsCenter({ min, max }: Bounds): Vec3 {
+function boundsCenter({ min, max }: Bounds): Vector3Tuple {
   return [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2]
 }
 
-export function boundsSize({ min, max }: Bounds): Vec3 {
+function boundsSize({ min, max }: Bounds): Vector3Tuple {
   return [max[0] - min[0], max[1] - min[1], max[2] - min[2]]
 }
 
