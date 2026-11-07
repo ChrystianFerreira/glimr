@@ -56,3 +56,15 @@ export function loadCover(url: string, title: string, steps: CoverSteps = DEFAUL
   byTitle.set(title, cover)
   return cover
 }
+
+/**
+ * Drops a URL's cached cover so the next call loads it fresh, and disposes its texture.
+ * @example
+ * forgetCover(removed.cover)
+ */
+export function forgetCover(url: string) {
+  const image = images.get(url)
+  images.delete(url)
+  covers.delete(url)
+  void image?.then((texture) => texture?.dispose())
+}

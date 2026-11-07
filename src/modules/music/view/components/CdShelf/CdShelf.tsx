@@ -2,7 +2,7 @@ import type { ThreeEvent } from '@react-three/fiber'
 import type { Vector3Tuple } from 'three'
 import { paint } from '../../../../common/utils/paintVertexColors'
 import { pointerCursor } from '../../../../common/utils/pointerCursor'
-import type { Cd } from '../../../shared/types/cd'
+import type { ShelfCd } from '../../../shared/types/cd'
 import { usePlaybackStore } from '../../hooks/usePlaybackStore'
 import { CD_SHELF_BACK_INSET, CD_SHELF_PANEL, CD_SHELF_ROW_FLOORS, CD_SHELF_SIZE } from '../../utils/cdShelfLayout'
 import { CdCase } from './CdCase'
@@ -16,7 +16,7 @@ const { width, height, depth } = CD_SHELF_SIZE
 const innerWidth = width - CD_SHELF_PANEL * 2
 
 type CdShelfProps = {
-  cds: Cd[]
+  cds: ShelfCd[]
   interactive: boolean
   onFocusShelf: () => void
   position: Vector3Tuple
@@ -69,7 +69,7 @@ export function CdShelf({ cds, interactive, onFocusShelf, position, trayClickabl
     onFocusShelf()
   }
 
-  const clickCd = (cd: Cd) => (event: ThreeEvent<MouseEvent>) => {
+  const clickCd = (cd: ShelfCd) => (event: ThreeEvent<MouseEvent>) => {
     event.stopPropagation()
     if (interactive || usePlaybackStore.getState().inTray === cd.id) select(cd)
     else onFocusShelf()

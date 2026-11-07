@@ -3,10 +3,10 @@ import { Suspense, use, useRef } from 'react'
 import { Euler, type Group, MathUtils, Quaternion, type Texture, Vector3, type Vector3Tuple } from 'three'
 import { paint } from '../../../../common/utils/paintVertexColors'
 import { pointerCursor } from '../../../../common/utils/pointerCursor'
-import type { Cd } from '../../../shared/types/cd'
+import type { ShelfCd } from '../../../shared/types/cd'
 import { usePlaybackStore } from '../../hooks/usePlaybackStore'
 import { CD_CASE_LEAN, CD_CASE_SIZE, cdSlotPosition } from '../../utils/cdShelfLayout'
-import { coverPlaceholder } from '../../utils/coverPlaceholder'
+import { burnedCoverPlaceholder, coverPlaceholder } from '../../utils/coverPlaceholder'
 import { loadCover } from '../../utils/loadCover'
 
 const CASE_COLOR = '#aeb6c8'
@@ -38,16 +38,26 @@ function CoverFace({ texture }: { texture: Texture }) {
   )
 }
 
-function PlaceholderCover({ title }: { title: string }) {
-  return <CoverFace texture={coverPlaceholder(title)} />
+function PlaceholderCover({ cd }: { cd: ShelfCd }) {
+  const texture = cd.isBurned ? burnedCoverPlaceholder(cd.id, cd.title, cd.placeholderColor) : coverPlaceholder(cd.title)
+  return <CoverFace texture={texture} />
 }
 
-function LoadedCover({ cd }: { cd: Cd }) {
-  return <CoverFace texture={use(loadCover(cd.cover, cd.title))} />
+function LoadedCover({ url, title }: { url: string; title: string }) {
+  return <CoverFace texture={use(loadCover(url, title))} />
+}
+
+function Cover({ cd }: { cd: ShelfCd }) {
+  if (!cd.cover) return <PlaceholderCover cd={cd} />
+  return (
+    <Suspense fallback={<PlaceholderCover cd={cd} />}>
+      <LoadedCover url={cd.cover} title={cd.title} />
+    </Suspense>
+  )
 }
 
 type CdCaseProps = {
-  cd: Cd
+  cd: ShelfCd
   slotIndex: number
   trayInShelf: Vector3Tuple
   onClick?: (event: ThreeEvent<MouseEvent>) => void
@@ -91,9 +101,7 @@ export function CdCase({ cd, slotIndex, trayInShelf, onClick }: CdCaseProps) {
         <boxGeometry args={[SPINE_WIDTH, CD_CASE_SIZE.height + 0.002, CD_CASE_SIZE.thickness + 0.004]} ref={paint(SPINE_COLOR)} />
         <meshBasicMaterial vertexColors />
       </mesh>
-      <Suspense fallback={<PlaceholderCover title={cd.title} />}>
-        <LoadedCover cd={cd} />
-      </Suspense>
+      <Cover cd={cd} />
       <mesh visible={false}>
         <boxGeometry args={HIT_BOX} />
       </mesh>

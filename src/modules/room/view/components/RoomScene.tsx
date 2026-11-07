@@ -1,6 +1,9 @@
 import type { ThreeEvent } from '@react-three/fiber'
+import { useEffect } from 'react'
 import { pointerCursor } from '../../../common/utils/pointerCursor'
 import { CdShelf } from '../../../music/view/components/CdShelf/CdShelf'
+import { useBurnedCdsStore } from '../../../music/view/hooks/useBurnedCdsStore'
+import { composeShelf } from '../../shared/utils/composeShelf'
 import { useRoomStore } from '../hooks/useRoomStore'
 import { useRoomTuningStore } from '../hooks/useRoomTuningStore'
 import { SHELF_SPOT, STEREO_TRAY_POSITION } from '../utils/roomLayout'
@@ -18,6 +21,15 @@ export function RoomScene() {
   const focused = useRoomStore((state) => state.focused)
   const focus = useRoomStore((state) => state.focus)
   const back = useRoomStore((state) => state.back)
+  const burned = useBurnedCdsStore((state) => state.burned)
+  const refreshBurned = useBurnedCdsStore((state) => state.refresh)
+
+  useEffect(() => {
+    void refreshBurned()
+    const onFocus = () => void refreshBurned()
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
+  }, [refreshBurned])
 
   const focusStereo = (event: ThreeEvent<MouseEvent>) => {
     event.stopPropagation()
@@ -31,7 +43,7 @@ export function RoomScene() {
         <RoomShell wallColor={wallColor} wainscotColor={wainscotColor} floorColor={floorColor} />
       </group>
       <CdShelf
-        cds={load.status === 'loaded' ? load.shelf : []}
+        cds={load.status === 'loaded' ? composeShelf(load.shelf, burned).cds : []}
         interactive={focused === 'shelf'}
         onFocusShelf={() => focus('shelf')}
         position={SHELF_SPOT.position}
