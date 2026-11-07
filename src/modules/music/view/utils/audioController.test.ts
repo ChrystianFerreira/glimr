@@ -7,8 +7,21 @@ afterEach(() => {
 })
 
 function controllerWith(element: FakeAudioElement) {
-  return createAudioController({ onEnded: vi.fn(), onError: vi.fn(), createElement: () => element })
+  return createAudioController({
+    onEnded: vi.fn(),
+    onError: vi.fn(),
+    onExternalPause: vi.fn(),
+    onExternalPlay: vi.fn(),
+    createElement: () => element,
+  })
 }
+
+function spiedController(element: FakeAudioElement) {
+  const callbacks = { onEnded: vi.fn(), onError: vi.fn(), onExternalPause: vi.fn(), onExternalPlay: vi.fn() }
+  return { ...callbacks, controller: createAudioController({ ...callbacks, createElement: () => element }) }
+}
+
+const flush = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 describe('audioController', () => {
   it('calls the element play() in the same call as play, with no await before it', () => {
@@ -54,7 +67,13 @@ describe('audioController', () => {
     const element = new FakeAudioElement()
     const onEnded = vi.fn()
     const onError = vi.fn()
-    const controller = createAudioController({ onEnded, onError, createElement: () => element })
+    const controller = createAudioController({
+      onEnded,
+      onError,
+      onExternalPause: vi.fn(),
+      onExternalPlay: vi.fn(),
+      createElement: () => element,
+    })
     controller.play('/media/a.mp3')
     const firstLoadListeners = [...element.listenerHistory]
 
@@ -68,12 +87,114 @@ describe('audioController', () => {
   it('reports a rejected play() as an error', async () => {
     const element = new FakeAudioElement()
     element.nextPlay = () => Promise.reject(new DOMException('Blocked', 'NotAllowedError'))
-    const onError = vi.fn()
-    const controller = createAudioController({ onEnded: vi.fn(), onError, createElement: () => element })
+    const { controller, onError } = spiedController(element)
 
     controller.play('/media/a.mp3')
-    await Promise.resolve()
+    await flush()
 
     expect(onError).toHaveBeenCalledTimes(1)
+  })
+
+  it("ignores a rejected play() from an earlier load but reports the current load's", async () => {
+    const element = new FakeAudioElement()
+    const rejectPlay: ((error: unknown) => void)[] = []
+    element.nextPlay = () => new Promise((_, reject) => rejectPlay.push(reject))
+    const { controller, onError } = spiedController(element)
+    controller.play('/media/a.mp3')
+    controller.play('/media/b.mp3')
+
+    rejectPlay[0](new DOMException('Unsupported', 'NotSupportedError'))
+    await flush()
+    expect(onError).not.toHaveBeenCalled()
+
+    rejectPlay[1](new DOMException('Unsupported', 'NotSupportedError'))
+    await flush()
+    expect(onError).toHaveBeenCalledTimes(1)
+  })
+
+  it('reports a resume whose play() is not allowed as one error', async () => {
+    const element = new FakeAudioElement()
+    const { controller, onError } = spiedController(element)
+    controller.play('/media/a.mp3')
+    await flush()
+    controller.pause()
+    element.nextPlay = () => Promise.reject(new DOMException('Blocked', 'NotAllowedError'))
+
+    controller.resume()
+    await flush()
+
+    expect(onError).toHaveBeenCalledTimes(1)
+  })
+
+  it('reports a restart whose play() is not allowed as one error', async () => {
+    const element = new FakeAudioElement()
+    const { controller, onError } = spiedController(element)
+    controller.play('/media/a.mp3')
+    await flush()
+    element.finish()
+    element.nextPlay = () => Promise.reject(new DOMException('Blocked', 'NotAllowedError'))
+
+    controller.restart()
+    await flush()
+
+    expect(onError).toHaveBeenCalledTimes(1)
+  })
+
+  it('reports a pause it did not ask for', async () => {
+    const element = new FakeAudioElement()
+    const { controller, onExternalPause } = spiedController(element)
+    controller.play('/media/a.mp3')
+    await flush()
+
+    element.pause()
+
+    expect(onExternalPause).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not report the pause that comes right before the end of the track', async () => {
+    const element = new FakeAudioElement()
+    const { controller, onEnded, onExternalPause } = spiedController(element)
+    controller.play('/media/a.mp3')
+    await flush()
+
+    element.finish()
+
+    expect(onExternalPause).not.toHaveBeenCalled()
+    expect(onEnded).toHaveBeenCalledTimes(1)
+  })
+
+  it('reports a play it did not ask for after the track ended', async () => {
+    const element = new FakeAudioElement()
+    const { controller, onExternalPlay } = spiedController(element)
+    controller.play('/media/a.mp3')
+    await flush()
+    element.finish()
+    onExternalPlay.mockClear()
+
+    void element.play()
+    await flush()
+
+    expect(onExternalPlay).toHaveBeenCalledTimes(1)
+  })
+
+  it('drops pause and playing events from an earlier load', async () => {
+    const element = new FakeAudioElement()
+    const { controller, onExternalPause, onExternalPlay } = spiedController(element)
+    controller.play('/media/a.mp3')
+    await flush()
+    const firstLoadListeners = [...element.listenerHistory]
+    controller.play('/media/b.mp3')
+    await flush()
+    onExternalPlay.mockClear()
+
+    element.paused = true
+    for (const { listener } of firstLoadListeners) listener()
+    element.paused = false
+    for (const { listener } of firstLoadListeners) listener()
+
+    expect(onExternalPause).not.toHaveBeenCalled()
+    expect(onExternalPlay).not.toHaveBeenCalled()
+    element.pause()
+    expect(onExternalPause).toHaveBeenCalledTimes(1)
   })
 })

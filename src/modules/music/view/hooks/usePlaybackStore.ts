@@ -30,13 +30,20 @@ export function createPlaybackStore(createElement?: () => AudioElementLike) {
           inTray: null,
           errorMessage: state.current ? `Couldn't play ${state.current.title}` : null,
         })),
+      onExternalPause: () => {
+        if (get().status === 'playing') set({ status: 'paused' })
+      },
+      onExternalPlay: () => {
+        const { status, inTray } = get()
+        if ((status === 'paused' || status === 'stopped') && inTray) set({ status: 'playing' })
+      },
     })
 
     const togglePlay = () => {
       const { status } = get()
       if (status === 'playing') {
-        audio.pause()
         set({ status: 'paused' })
+        audio.pause()
       } else if (status === 'paused') {
         audio.resume()
         set({ status: 'playing' })
@@ -63,8 +70,8 @@ export function createPlaybackStore(createElement?: () => AudioElementLike) {
       stop: () => {
         const { status } = get()
         if (status !== 'playing' && status !== 'paused') return
-        audio.stop()
         set({ status: 'stopped' })
+        audio.stop()
       },
     }
   })

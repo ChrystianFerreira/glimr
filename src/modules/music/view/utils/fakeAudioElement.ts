@@ -8,11 +8,12 @@ type Listener = () => void
  * @example
  * const element = new FakeAudioElement()
  * element.nextPlay = () => Promise.reject(new DOMException('', 'NotAllowedError'))
- * element.emit('ended')
+ * element.finish()
  */
 export class FakeAudioElement implements AudioElementLike {
   currentTime = 0
   paused = true
+  ended = false
   readonly srcHistory: string[] = []
   readonly listenerHistory: { type: AudioEventType; listener: Listener }[] = []
   nextPlay: () => Promise<void> = () => Promise.resolve()
@@ -20,12 +21,19 @@ export class FakeAudioElement implements AudioElementLike {
   private readonly listeners = new Map<AudioEventType, Set<Listener>>()
 
   readonly play = vi.fn(() => {
+    const wasPaused = this.paused
+    if (this.ended) this.currentTime = 0
     this.paused = false
-    return this.nextPlay()
+    this.ended = false
+    return this.nextPlay().then(() => {
+      if (wasPaused && !this.paused) this.emit('playing')
+    })
   })
 
   readonly pause = vi.fn(() => {
+    if (this.paused) return
     this.paused = true
+    this.emit('pause')
   })
 
   readonly load = vi.fn()
@@ -36,6 +44,8 @@ export class FakeAudioElement implements AudioElementLike {
 
   set src(value: string) {
     this.source = value
+    this.paused = true
+    this.ended = false
     this.srcHistory.push(value)
   }
 
@@ -56,6 +66,15 @@ export class FakeAudioElement implements AudioElementLike {
 
   emit(type: AudioEventType) {
     for (const listener of [...(this.listeners.get(type) ?? [])]) listener()
+  }
+
+  finish() {
+    this.ended = true
+    if (!this.paused) {
+      this.paused = true
+      this.emit('pause')
+    }
+    this.emit('ended')
   }
 
   listenerCount() {

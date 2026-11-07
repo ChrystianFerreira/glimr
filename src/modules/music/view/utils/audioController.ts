@@ -1,8 +1,10 @@
-export type AudioEventType = 'ended' | 'error'
+export type AudioEventType = 'ended' | 'error' | 'pause' | 'playing'
 
 export type AudioElementLike = {
   src: string
   currentTime: number
+  readonly paused: boolean
+  readonly ended: boolean
   play(): Promise<void>
   pause(): void
   load(): void
@@ -14,6 +16,8 @@ export type AudioElementLike = {
 type AudioControllerOptions = {
   onEnded: () => void
   onError: () => void
+  onExternalPause: () => void
+  onExternalPlay: () => void
   createElement?: () => AudioElementLike
 }
 
@@ -42,10 +46,16 @@ function requestPlaybackSession() {
 /**
  * Owns the app's one audio element; creating a new controller disposes the previous one.
  * @example
- * const audio = createAudioController({ onEnded, onError })
+ * const audio = createAudioController({ onEnded, onError, onExternalPause, onExternalPlay })
  * audio.play('/media/song.mp3') // inside the click handler, before any await
  */
-export function createAudioController({ onEnded, onError, createElement = () => new Audio() }: AudioControllerOptions): AudioController {
+export function createAudioController({
+  onEnded,
+  onError,
+  onExternalPause,
+  onExternalPlay,
+  createElement = () => new Audio(),
+}: AudioControllerOptions): AudioController {
   live?.dispose()
   requestPlaybackSession()
 
@@ -76,11 +86,22 @@ export function createAudioController({ onEnded, onError, createElement = () => 
       const failed = () => {
         if (loadToken === token) onError()
       }
+      // The element pauses itself right before 'ended', and events land after state changes, so check its live state.
+      const paused = () => {
+        if (loadToken === token && target.paused && !target.ended) onExternalPause()
+      }
+      const playing = () => {
+        if (loadToken === token && !target.paused) onExternalPlay()
+      }
       target.addEventListener('ended', ended)
       target.addEventListener('error', failed)
+      target.addEventListener('pause', paused)
+      target.addEventListener('playing', playing)
       detach = () => {
         target.removeEventListener('ended', ended)
         target.removeEventListener('error', failed)
+        target.removeEventListener('pause', paused)
+        target.removeEventListener('playing', playing)
       }
       target.src = src
       start(loadToken)
