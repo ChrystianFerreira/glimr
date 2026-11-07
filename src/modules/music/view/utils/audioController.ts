@@ -27,6 +27,7 @@ type AudioController = {
   restart: () => void
   pause: () => void
   stop: () => void
+  unload: () => void
   dispose: () => void
 }
 
@@ -121,14 +122,18 @@ export function createAudioController({
       element.pause()
       element.currentTime = 0
     },
-    dispose() {
+    unload() {
       token++
       detach()
+      detach = () => {}
       if (element) {
         element.pause()
         element.removeAttribute('src')
         element.load()
       }
+    },
+    dispose() {
+      controller.unload()
       if (live === controller) setLive(null)
     },
   }

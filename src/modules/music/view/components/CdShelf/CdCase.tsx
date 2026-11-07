@@ -1,13 +1,15 @@
 import { type ThreeEvent, useFrame } from '@react-three/fiber'
-import { Suspense, use, useRef } from 'react'
+import { Suspense, use, useEffect, useRef } from 'react'
 import { Euler, type Group, MathUtils, Quaternion, type Texture, Vector3, type Vector3Tuple } from 'three'
+import { swallowNextClick } from '../../../../common/utils/overlayStack'
 import { paint } from '../../../../common/utils/paintVertexColors'
 import { pointerCursor } from '../../../../common/utils/pointerCursor'
-import type { Cd } from '../../../shared/types/cd'
+import type { ShelfCd } from '../../../shared/types/cd'
 import { usePlaybackStore } from '../../hooks/usePlaybackStore'
 import { CD_CASE_LEAN, CD_CASE_SIZE, cdSlotPosition } from '../../utils/cdShelfLayout'
-import { coverPlaceholder } from '../../utils/coverPlaceholder'
+import { burnedCoverPlaceholder, coverPlaceholder } from '../../utils/coverPlaceholder'
 import { loadCover } from '../../utils/loadCover'
+import { IDLE_PRESS, LONG_PRESS_MS, type LongPressInput, type LongPressState, nextLongPress } from '../../utils/longPress'
 
 const CASE_COLOR = '#aeb6c8'
 const CASE_SHADOW = '#5d6478'
@@ -38,26 +40,43 @@ function CoverFace({ texture }: { texture: Texture }) {
   )
 }
 
-function PlaceholderCover({ title }: { title: string }) {
-  return <CoverFace texture={coverPlaceholder(title)} />
+function PlaceholderCover({ cd }: { cd: ShelfCd }) {
+  const texture = cd.isBurned ? burnedCoverPlaceholder(cd.id, cd.title, cd.placeholderColor) : coverPlaceholder(cd.title)
+  return <CoverFace texture={texture} />
 }
 
-function LoadedCover({ cd }: { cd: Cd }) {
-  return <CoverFace texture={use(loadCover(cd.cover, cd.title))} />
+function LoadedCover({ url, title }: { url: string; title: string }) {
+  return <CoverFace texture={use(loadCover(url, title))} />
 }
+
+function Cover({ cd }: { cd: ShelfCd }) {
+  if (!cd.cover) return <PlaceholderCover cd={cd} />
+  return (
+    <Suspense fallback={<PlaceholderCover cd={cd} />}>
+      <LoadedCover url={cd.cover} title={cd.title} />
+    </Suspense>
+  )
+}
+
+type ScreenPoint = { clientX: number; clientY: number }
 
 type CdCaseProps = {
-  cd: Cd
+  cd: ShelfCd
   slotIndex: number
   trayInShelf: Vector3Tuple
   onClick?: (event: ThreeEvent<MouseEvent>) => void
+  onOpenMenu?: (x: number, y: number) => void
 }
 
-export function CdCase({ cd, slotIndex, trayInShelf, onClick }: CdCaseProps) {
+export function CdCase({ cd, slotIndex, trayInShelf, onClick, onOpenMenu }: CdCaseProps) {
   const groupRef = useRef<Group>(null)
   const progressRef = useRef(0)
+  const pressRef = useRef<LongPressState>(IDLE_PRESS)
+  const pressTimerRef = useRef<number | undefined>(undefined)
   const settledRef = useRef<{ slot: Vector3Tuple; tray: Vector3Tuple } | null>(null)
   const slotPosition = cdSlotPosition(slotIndex)
+
+  useEffect(() => () => window.clearTimeout(pressTimerRef.current), [])
 
   useFrame((_, delta) => {
     const group = groupRef.current
@@ -81,8 +100,38 @@ export function CdCase({ cd, slotIndex, trayInShelf, onClick }: CdCaseProps) {
     settledRef.current = progressRef.current === target ? { slot: slotPosition, tray: trayInShelf } : null
   })
 
+  const press = (input: LongPressInput, { clientX, clientY }: ScreenPoint) => {
+    const { state, effect } = nextLongPress(pressRef.current, input)
+    pressRef.current = state
+    if (effect.kind === 'startTimer') {
+      pressTimerRef.current = window.setTimeout(() => press({ type: 'timerElapsed' }, { clientX, clientY }), LONG_PRESS_MS)
+      return
+    }
+    if (effect.kind !== 'none') window.clearTimeout(pressTimerRef.current)
+    if (effect.kind !== 'openMenu') return
+    if (effect.swallowClick) swallowNextClick()
+    onOpenMenu?.(clientX, clientY)
+  }
+
+  const releasePress = (event: ThreeEvent<PointerEvent>) => press({ type: 'pointerUp' }, event)
+
+  const menuHandlers = onOpenMenu && {
+    onContextMenu: (event: ThreeEvent<MouseEvent>) => {
+      event.nativeEvent.preventDefault()
+      event.stopPropagation()
+      press({ type: 'contextMenu' }, event)
+    },
+    onPointerDown: (event: ThreeEvent<PointerEvent>) =>
+      press({ type: 'pointerDown', pointerType: event.pointerType, x: event.clientX, y: event.clientY }, event),
+    onPointerMove: (event: ThreeEvent<PointerEvent>) =>
+      press({ type: 'pointerMove', x: event.clientX, y: event.clientY }, event),
+    onPointerUp: releasePress,
+    onPointerLeave: releasePress,
+    onPointerCancel: releasePress,
+  }
+
   return (
-    <group ref={groupRef} {...(onClick ? { onClick, ...pointerCursor } : {})}>
+    <group ref={groupRef} {...(onClick ? { onClick, ...pointerCursor } : {})} {...menuHandlers}>
       <mesh>
         <boxGeometry args={[CD_CASE_SIZE.width, CD_CASE_SIZE.height, CD_CASE_SIZE.thickness]} ref={paint(CASE_SHADOW, CASE_COLOR)} />
         <meshBasicMaterial vertexColors />
@@ -91,9 +140,7 @@ export function CdCase({ cd, slotIndex, trayInShelf, onClick }: CdCaseProps) {
         <boxGeometry args={[SPINE_WIDTH, CD_CASE_SIZE.height + 0.002, CD_CASE_SIZE.thickness + 0.004]} ref={paint(SPINE_COLOR)} />
         <meshBasicMaterial vertexColors />
       </mesh>
-      <Suspense fallback={<PlaceholderCover title={cd.title} />}>
-        <LoadedCover cd={cd} />
-      </Suspense>
+      <Cover cd={cd} />
       <mesh visible={false}>
         <boxGeometry args={HIT_BOX} />
       </mesh>

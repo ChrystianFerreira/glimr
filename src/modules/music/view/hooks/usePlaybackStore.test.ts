@@ -1,10 +1,20 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import type { Cd } from '../../shared/types/cd'
+import type { BurnedShelfCd, ShelfCd } from '../../shared/types/cd'
 import { FakeAudioElement } from '../utils/fakeAudioElement'
 import { createPlaybackStore } from './usePlaybackStore'
 
-const cdA: Cd = { id: 'a', title: 'Track A', artist: 'Artist A', cover: '/a.png', audio: '/media/a.mp3' }
-const cdB: Cd = { id: 'b', title: 'Track B', artist: 'Artist B', cover: '/b.png', audio: '/media/b%20b.mp3' }
+const cdA: ShelfCd = { isBurned: false, id: 'a', title: 'Track A', artist: 'Artist A', cover: '/a.png', audio: '/media/a.mp3' }
+const cdB: ShelfCd = { isBurned: false, id: 'b', title: 'Track B', artist: 'Artist B', cover: '/b.png', audio: '/media/b%20b.mp3' }
+const burned: BurnedShelfCd = {
+  isBurned: true,
+  id: 'burned-1',
+  title: 'Mine',
+  artist: '',
+  audio: 'blob:http://localhost:5173/1',
+  cover: null,
+  placeholderColor: '#f4e1c1',
+  burnedAt: 1,
+}
 
 let element: FakeAudioElement
 let store: ReturnType<typeof createPlaybackStore>
@@ -212,5 +222,58 @@ describe('playback controlled from outside the app', () => {
     for (const { listener } of firstLoadListeners) listener()
 
     expect(store.getState()).toMatchObject({ status: 'playing', current: cdB, inTray: 'b' })
+  })
+})
+
+describe('eject', () => {
+  const cleared = { status: 'idle', current: null, inTray: null, errorMessage: null }
+
+  const putInStatus = async (status: 'playing' | 'paused' | 'stopped' | 'error') => {
+    store.getState().select(burned)
+    await flushPlay()
+    if (status === 'paused') store.getState().togglePlay()
+    if (status === 'stopped') store.getState().stop()
+    if (status === 'error') element.emit('error')
+    expect(store.getState().status).toBe(status)
+  }
+
+  it.each(['playing', 'paused', 'stopped', 'error'] as const)(
+    'clears the current CD and the tray when it is %s',
+    async (status) => {
+      await putInStatus(status)
+
+      store.getState().eject(burned.id)
+
+      expect(store.getState()).toMatchObject(cleared)
+    },
+  )
+
+  it('changes nothing when another CD is current', async () => {
+    store.getState().select(cdA)
+    await flushPlay()
+    const before = store.getState()
+
+    store.getState().eject(burned.id)
+
+    expect(store.getState()).toMatchObject({ status: before.status, current: cdA, inTray: 'a' })
+    expect(element.src).toBe('/media/a.mp3')
+    expect(element.paused).toBe(false)
+  })
+
+  it('lets go of the source, and a later play from outside the app changes nothing', async () => {
+    store.getState().select(burned)
+    await flushPlay()
+
+    store.getState().eject(burned.id)
+    expect(element.src).toBe('')
+    expect(element.paused).toBe(true)
+    expect(element.load).toHaveBeenCalled()
+
+    void element.play()
+    await flushPlay()
+    element.finish()
+    element.emit('error')
+
+    expect(store.getState()).toMatchObject(cleared)
   })
 })

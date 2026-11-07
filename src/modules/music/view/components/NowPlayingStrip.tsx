@@ -1,3 +1,4 @@
+import { useCdRemovalStore } from '../hooks/useCdRemovalStore'
 import { usePlaybackStore } from '../hooks/usePlaybackStore'
 
 export function NowPlayingStrip() {
@@ -6,13 +7,21 @@ export function NowPlayingStrip() {
   const errorMessage = usePlaybackStore((state) => state.errorMessage)
   const togglePlay = usePlaybackStore((state) => state.togglePlay)
   const stop = usePlaybackStore((state) => state.stop)
+  const ask = useCdRemovalStore((state) => state.ask)
 
   if (status === 'idle' || !current) return null
 
+  const removeButton = current.isBurned && (
+    <button type="button" onClick={() => ask(current)}>
+      Remove from shelf
+    </button>
+  )
+
   if (status === 'error') {
     return (
-      <div className="now-playing now-playing-error" role="alert">
-        {errorMessage}
+      <div className="now-playing now-playing-error">
+        <span role="alert">{errorMessage}</span>
+        {removeButton}
       </div>
     )
   }
@@ -27,6 +36,7 @@ export function NowPlayingStrip() {
       <button type="button" onClick={stop} disabled={status === 'stopped'} aria-label="Stop">
         ■
       </button>
+      {removeButton}
     </div>
   )
 }

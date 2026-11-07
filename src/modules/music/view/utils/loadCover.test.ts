@@ -1,6 +1,6 @@
 import { Texture } from 'three'
 import { describe, expect, it, vi } from 'vitest'
-import { loadCover } from './loadCover'
+import { forgetCover, loadCover } from './loadCover'
 
 const image = {} as HTMLImageElement
 
@@ -82,5 +82,31 @@ describe('loadCover', () => {
     expect(steps.loadImage).toHaveBeenCalledTimes(1)
     expect(steps.toTexture).toHaveBeenCalledTimes(1)
     expect(steps.placeholder).not.toHaveBeenCalled()
+  })
+
+  it('loads a URL fresh after it is forgotten, and disposes the old texture', async () => {
+    const { cover, steps } = fakeSteps(() => Promise.resolve(image))
+    const dispose = vi.spyOn(cover, 'dispose')
+    const first = loadCover('blob:forgotten', 'Mine', steps)
+    await first
+
+    forgetCover('blob:forgotten')
+    await Promise.resolve()
+    const second = loadCover('blob:forgotten', 'Mine', steps)
+
+    expect(second).not.toBe(first)
+    expect(steps.loadImage).toHaveBeenCalledTimes(2)
+    expect(dispose).toHaveBeenCalledTimes(1)
+  })
+
+  it('leaves the shared placeholder alone when forgetting a cover that failed to load', async () => {
+    const { placeholder, steps } = fakeSteps(() => Promise.reject(new Error('decode')))
+    const dispose = vi.spyOn(placeholder, 'dispose')
+    await loadCover('blob:broken', 'Broken', steps)
+
+    forgetCover('blob:broken')
+    await Promise.resolve()
+
+    expect(dispose).not.toHaveBeenCalled()
   })
 })

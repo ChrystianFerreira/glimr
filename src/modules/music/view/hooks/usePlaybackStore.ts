@@ -1,23 +1,25 @@
 import { create } from 'zustand'
-import type { Cd } from '../../shared/types/cd'
+import type { ShelfCd } from '../../shared/types/cd'
 import { type AudioElementLike, createAudioController } from '../utils/audioController'
 
 type PlaybackStatus = 'idle' | 'playing' | 'paused' | 'stopped' | 'error'
 
 type PlaybackStore = {
   status: PlaybackStatus
-  current: Cd | null
+  current: ShelfCd | null
   inTray: string | null
   errorMessage: string | null
-  select: (cd: Cd) => void
+  select: (cd: ShelfCd) => void
   togglePlay: () => void
   stop: () => void
+  eject: (cdId: string) => void
 }
 
 /**
  * @example
  * const store = createPlaybackStore(() => new FakeAudioElement())
  * store.getState().select(cd)
+ * store.getState().eject(cd.id) // before deleting a burned CD's record and revoking its audio URL
  */
 export function createPlaybackStore(createElement?: () => AudioElementLike) {
   return create<PlaybackStore>()((set, get) => {
@@ -72,6 +74,11 @@ export function createPlaybackStore(createElement?: () => AudioElementLike) {
         if (status !== 'playing' && status !== 'paused') return
         set({ status: 'stopped' })
         audio.stop()
+      },
+      eject: (cdId) => {
+        if (get().current?.id !== cdId) return
+        audio.unload()
+        set({ status: 'idle', current: null, inTray: null, errorMessage: null })
       },
     }
   })

@@ -197,4 +197,52 @@ describe('audioController', () => {
     element.pause()
     expect(onExternalPause).toHaveBeenCalledTimes(1)
   })
+
+  it('unloads the source and stops reporting events until the next play', async () => {
+    const element = new FakeAudioElement()
+    const { controller, onEnded, onError, onExternalPause, onExternalPlay } = spiedController(element)
+    controller.play('blob:http://localhost:5173/a')
+    await flush()
+    onExternalPlay.mockClear()
+
+    controller.unload()
+
+    expect(element.paused).toBe(true)
+    expect(element.src).toBe('')
+    expect(element.load).toHaveBeenCalledTimes(1)
+    expect(element.listenerCount()).toBe(0)
+    void element.play()
+    await flush()
+    element.finish()
+    expect(onEnded).not.toHaveBeenCalled()
+    expect(onError).not.toHaveBeenCalled()
+    expect(onExternalPause).not.toHaveBeenCalled()
+    expect(onExternalPlay).not.toHaveBeenCalled()
+  })
+
+  it('ignores a play() rejection from the load it unloaded', async () => {
+    const element = new FakeAudioElement()
+    const rejectPlay: ((error: unknown) => void)[] = []
+    element.nextPlay = () => new Promise((_, reject) => rejectPlay.push(reject))
+    const { controller, onError } = spiedController(element)
+    controller.play('/media/a.mp3')
+
+    controller.unload()
+    rejectPlay[0](new DOMException('Unsupported', 'NotSupportedError'))
+    await flush()
+
+    expect(onError).not.toHaveBeenCalled()
+  })
+
+  it('plays again normally after an unload', () => {
+    const element = new FakeAudioElement()
+    const controller = controllerWith(element)
+    controller.play('/media/a.mp3')
+    controller.unload()
+
+    controller.play('/media/b.mp3')
+
+    expect(element.src).toBe('/media/b.mp3')
+    expect(element.paused).toBe(false)
+  })
 })

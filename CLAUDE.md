@@ -12,6 +12,8 @@ Node 22 (`.nvmrc`).
 - `npm test`
 - `npm run build`
 
+Burned CDs are stored per browser origin, so open the app at `http://localhost:5173` (the dev server refuses to start on any other port).
+
 ## Stack
 
 Vite + React 19 + React Compiler + React Three Fiber 9 + drei + zustand + zod + Vitest.

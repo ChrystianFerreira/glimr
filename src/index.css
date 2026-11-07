@@ -20,6 +20,11 @@ body {
   image-rendering: pixelated;
 }
 
+.room-canvas {
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
 .room-back-button {
   position: absolute;
   top: 16px;
@@ -41,8 +46,8 @@ body {
 }
 
 .room-stats {
-  top: auto !important;
-  bottom: 0;
+  top: 96px !important;
+  left: 10px !important;
 }
 
 .room-error-banner {
@@ -135,6 +140,252 @@ body {
 .now-playing button:disabled {
   color: #8f86a0;
   cursor: default;
+}
+
+.burn-panel {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 280px;
+  box-sizing: border-box;
+  font: 13px/1.4 Tahoma, Verdana, sans-serif;
+  color: #1b1726;
+  background: #f3e9d2;
+  border: 2px solid;
+  border-color: #fff #6b5f7d #6b5f7d #fff;
+  box-shadow: 4px 4px 0 rgb(0 0 0 / 0.45);
+}
+
+.burn-panel-heading {
+  margin: 0;
+  padding: 4px 8px;
+  font: bold 13px/1.4 Tahoma, Verdana, sans-serif;
+  color: #fff;
+  background: linear-gradient(90deg, #4b2f86, #2f8f8a);
+}
+
+.burn-panel-body {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 10px 12px 8px;
+  border: 0;
+}
+
+.burn-file-row,
+.burn-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.burn-file-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.burn-file-button,
+.burn-button {
+  position: relative;
+  flex: none;
+  padding: 4px 10px;
+  font: bold 13px/1.4 Tahoma, Verdana, sans-serif;
+  color: #1b1726;
+  background: #ddd0b4;
+  border: 2px solid;
+  border-color: #fff #6b5f7d #6b5f7d #fff;
+  cursor: pointer;
+}
+
+.burn-file-button input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.burn-file-button:focus-within,
+.burn-button:focus-visible {
+  outline: 1px dotted #1b1726;
+  outline-offset: -5px;
+}
+
+.burn-file-button:active,
+.burn-button:active:not(:disabled) {
+  border-color: #6b5f7d #fff #fff #6b5f7d;
+}
+
+.burn-panel-body:disabled .burn-file-button,
+.burn-panel-body:disabled .burn-file-button input,
+.burn-button:disabled {
+  color: #8f86a0;
+  cursor: default;
+}
+
+.burn-text-field {
+  display: grid;
+  gap: 2px;
+  font-weight: bold;
+}
+
+.burn-text-field input {
+  min-width: 0;
+  padding: 3px 6px;
+  font: 16px/1.3 Tahoma, Verdana, sans-serif;
+  color: #1b1726;
+  background: #fff;
+  border: 2px solid;
+  border-color: #6b5f7d #fff #fff #6b5f7d;
+  border-radius: 0;
+}
+
+.burn-text-field input:disabled {
+  background: #ece3cf;
+}
+
+.burn-shelf-full {
+  font-weight: bold;
+  color: #8a2f4b;
+}
+
+.burn-status {
+  min-height: 1.4em;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.win-menu {
+  position: fixed;
+  z-index: 10;
+  display: grid;
+  min-width: 160px;
+  padding: 2px;
+  background: #f3e9d2;
+  border: 2px solid;
+  border-color: #fff #6b5f7d #6b5f7d #fff;
+  box-shadow: 4px 4px 0 rgb(0 0 0 / 0.45);
+}
+
+.win-menu-item {
+  padding: 6px 20px;
+  font: 13px/1.4 Tahoma, Verdana, sans-serif;
+  color: #1b1726;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.win-menu-item:hover,
+.win-menu-item:focus-visible {
+  color: #fff;
+  background: #4b2f86;
+  outline: none;
+}
+
+.win-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(27 23 38 / 0.35);
+}
+
+.win-dialog {
+  width: min(360px, 100%);
+  box-sizing: border-box;
+  font: 13px/1.4 Tahoma, Verdana, sans-serif;
+  color: #1b1726;
+  background: #f3e9d2;
+  border: 2px solid;
+  border-color: #fff #6b5f7d #6b5f7d #fff;
+  box-shadow: 4px 4px 0 rgb(0 0 0 / 0.45);
+}
+
+.win-dialog-title {
+  margin: 0;
+  padding: 4px 8px;
+  font: bold 13px/1.4 Tahoma, Verdana, sans-serif;
+  color: #fff;
+  background: linear-gradient(90deg, #4b2f86, #2f8f8a);
+}
+
+.win-dialog-body {
+  padding: 12px 14px 4px;
+  overflow-wrap: anywhere;
+}
+
+.win-dialog-body p {
+  margin: 0 0 8px;
+}
+
+.win-dialog-error {
+  font-weight: bold;
+  color: #8a2f4b;
+}
+
+.win-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 4px 14px 12px;
+}
+
+.win-button {
+  min-width: 80px;
+  padding: 4px 10px;
+  font: bold 13px/1.4 Tahoma, Verdana, sans-serif;
+  color: #1b1726;
+  background: #ddd0b4;
+  border: 2px solid;
+  border-color: #fff #6b5f7d #6b5f7d #fff;
+  cursor: pointer;
+}
+
+.win-button:focus-visible {
+  outline: 1px dotted #1b1726;
+  outline-offset: -5px;
+}
+
+.win-button:active {
+  border-color: #6b5f7d #fff #fff #6b5f7d;
+}
+
+@media (orientation: portrait) {
+  .burn-panel {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: auto;
+    box-shadow: none;
+  }
+
+  .burn-panel-body {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 8px;
+    padding: 8px 12px calc(6px + env(safe-area-inset-bottom));
+  }
+
+  .burn-file-row,
+  .burn-actions,
+  .burn-status {
+    grid-column: 1 / -1;
+  }
+
+  .burn-panel ~ .now-playing {
+    bottom: calc(var(--burn-band) + 8px);
+  }
 }
 
 @media (max-width: 660px) {
