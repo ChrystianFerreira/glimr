@@ -26,3 +26,5 @@ dist-ssr
 public/room.json
 public/media/*
 !public/media/example/
+
+.claude/settings.local.json
