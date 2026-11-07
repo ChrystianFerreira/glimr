@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "id": "example-room",
+  "cds": [
+    {
+      "id": "example-tone-a",
+      "title": "Test Tone A",
+      "artist": "glimr",
+      "cover": "media/example/cover-a.png",
+      "audio": "media/example/tone-a.wav"
+    },
+    {
+      "id": "example-tone-b",
+      "title": "Test Tone B",
+      "artist": "glimr",
+      "cover": "media/example/cover-b.png",
+      "audio": "media/example/test tone b.wav"
+    },
+    {
+      "id": "example-tone-c",
+      "title": "Test Tone C",
+      "artist": "glimr",
+      "cover": "media/example/cover-c.png",
+      "audio": "media/example/tone-c.wav"
+    },
+    {
+      "id": "example-tone-d",
+      "title": "Test Tone D",
+      "artist": "glimr",
+      "cover": "media/example/cover-d.png",
+      "audio": "media/example/tone-d.wav"
+    }
+  ]
+}
