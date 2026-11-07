@@ -25,21 +25,34 @@ const DEFAULT_STEPS: CoverSteps = {
   placeholder: coverPlaceholder,
 }
 
-const covers = new Map<string, Promise<Texture>>()
+const images = new Map<string, Promise<Texture | null>>()
+const covers = new Map<string, Map<string, Promise<Texture>>>()
+
+function loadImageTexture(url: string, steps: CoverSteps): Promise<Texture | null> {
+  const cached = images.get(url)
+  if (cached) return cached
+
+  const texture = steps
+    .loadImage(url)
+    .then(steps.toTexture)
+    .catch(() => null)
+  images.set(url, texture)
+  return texture
+}
 
 /**
- * Resolves to the cover downscaled to 256px, or to the title placeholder on any failure; cached per URL.
+ * Resolves to the cover downscaled to 256px, or to the title placeholder on any failure; cached per URL and title.
  * @example
  * const texture = use(loadCover(cd.cover, cd.title))
  */
 export function loadCover(url: string, title: string, steps: CoverSteps = DEFAULT_STEPS): Promise<Texture> {
-  const cached = covers.get(url)
+  const byTitle = covers.get(url) ?? new Map<string, Promise<Texture>>()
+  covers.set(url, byTitle)
+
+  const cached = byTitle.get(title)
   if (cached) return cached
 
-  const cover = steps
-    .loadImage(url)
-    .then(steps.toTexture)
-    .catch(() => steps.placeholder(title))
-  covers.set(url, cover)
+  const cover = loadImageTexture(url, steps).then((texture) => texture ?? steps.placeholder(title))
+  byTitle.set(title, cover)
   return cover
 }
