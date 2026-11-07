@@ -4,9 +4,8 @@ import { renderScale } from '../../../common/utils/renderScale'
 import { BurnPanel } from '../../../music/view/components/BurnPanel/BurnPanel'
 import { CdRemoval } from '../../../music/view/components/CdRemoval'
 import { NowPlayingStrip } from '../../../music/view/components/NowPlayingStrip'
-import { useBurnedCdsStore } from '../../../music/view/hooks/useBurnedCdsStore'
-import { composeShelf, SHELF_SLOTS } from '../../shared/utils/composeShelf'
 import { loadRoom } from '../../shared/utils/loadRoom'
+import { useComposedShelf } from '../hooks/useComposedShelf'
 import { useRoomStore } from '../hooks/useRoomStore'
 import { useRoomTuningStore } from '../hooks/useRoomTuningStore'
 import { OVERVIEW_CAMERA } from '../utils/roomLayout'
@@ -24,7 +23,7 @@ export function RoomViewPage() {
   const back = useRoomStore((state) => state.back)
   const load = useRoomStore((state) => state.load)
   const focused = useRoomStore((state) => state.focused)
-  const burned = useBurnedCdsStore((state) => state.burned)
+  const { full: shelfFull } = useComposedShelf()
   const targetHeight = useRoomTuningStore((state) => state.targetHeight)
   const [containerHeight, setContainerHeight] = useState(0)
   const [burnPanelHeight, setBurnPanelHeight] = useState(0)
@@ -73,7 +72,7 @@ export function RoomViewPage() {
       {focused === 'shelf' && load.status === 'loaded' && (
         <BurnPanel
           ref={observeBurnPanel}
-          shelfFull={composeShelf(load.shelf, burned).cds.length >= SHELF_SLOTS}
+          shelfFull={shelfFull}
           roomCdCount={load.shelf.length}
         />
       )}

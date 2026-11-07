@@ -20,7 +20,11 @@ export type BurnStatus =
   | { kind: 'checking' }
   | { kind: 'burning' }
   | { kind: 'burned'; title: string }
-  | { kind: 'error'; message: string }
+  | { kind: 'error'; reason: 'audio' | 'cover' | 'save' | 'full'; message: string }
+
+export function isBusy(status: BurnStatus) {
+  return status.kind === 'checking' || status.kind === 'burning'
+}
 
 type DraftCover = { name: string; image: ImageBitmap }
 
@@ -72,7 +76,7 @@ export const useBurnDraftStore = create<BurnDraftStore>()((set, get) => {
       const playable = await probeAudio(file)
       if (pick !== latestAudioPick) return
       if (!playable) {
-        set({ status: { kind: 'error', message: UNPLAYABLE_MESSAGE } })
+        set({ status: { kind: 'error', reason: 'audio', message: UNPLAYABLE_MESSAGE } })
         return
       }
       set({ audio: file })
@@ -95,11 +99,11 @@ export const useBurnDraftStore = create<BurnDraftStore>()((set, get) => {
       }
       get().cover?.image.close()
       if (!image) {
-        set({ cover: null, status: { kind: 'error', message: COVER_ERROR_MESSAGE } })
+        set({ cover: null, status: { kind: 'error', reason: 'cover', message: COVER_ERROR_MESSAGE } })
         return
       }
       const { status } = get()
-      const clearsCoverError = status.kind === 'error' && status.message === COVER_ERROR_MESSAGE
+      const clearsCoverError = status.kind === 'error' && status.reason === 'cover'
       set({ cover: { name: file.name, image }, ...(clearsCoverError && { status: { kind: 'idle' } }) })
     },
     clearCover: () => {
@@ -112,7 +116,7 @@ export const useBurnDraftStore = create<BurnDraftStore>()((set, get) => {
     burn: async (roomCdCount) => {
       const { audio, cover, title, artist, status } = get()
       const trimmedTitle = title.trim()
-      if (!audio || !trimmedTitle || status.kind === 'checking' || status.kind === 'burning') return
+      if (!audio || !trimmedTitle || isBusy(status)) return
       set({ status: { kind: 'burning' } })
       try {
         await burnedCdStore.add(
@@ -127,8 +131,12 @@ export const useBurnDraftStore = create<BurnDraftStore>()((set, get) => {
           roomCdCount,
         )
       } catch (error) {
-        const message = error instanceof BurnedCdShelfFullError ? SHELF_FULL_MESSAGE : SAVE_ERROR_MESSAGE
-        set({ status: { kind: 'error', message } })
+        const shelfFull = error instanceof BurnedCdShelfFullError
+        set({
+          status: shelfFull
+            ? { kind: 'error', reason: 'full', message: SHELF_FULL_MESSAGE }
+            : { kind: 'error', reason: 'save', message: SAVE_ERROR_MESSAGE },
+        })
         return
       }
       await useBurnedCdsStore.getState().refresh()

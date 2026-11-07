@@ -1,6 +1,5 @@
 import type { BurnedShelfCd, Cd, ShelfCd } from '../../../music/shared/types/cd'
-
-export const SHELF_SLOTS = 12
+import { SHELF_SLOTS } from '../../../music/shared/utils/shelfSlots'
 
 /**
  * The shelf's CDs: the room file's first, then burned CDs oldest first, capped at the shelf's slots.

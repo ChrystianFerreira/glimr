@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import { pointerCursor } from '../../../common/utils/pointerCursor'
 import { CdShelf } from '../../../music/view/components/CdShelf/CdShelf'
 import { useBurnedCdsStore } from '../../../music/view/hooks/useBurnedCdsStore'
-import { composeShelf } from '../../shared/utils/composeShelf'
+import { useComposedShelf } from '../hooks/useComposedShelf'
 import { useRoomStore } from '../hooks/useRoomStore'
 import { useRoomTuningStore } from '../hooks/useRoomTuningStore'
 import { SHELF_SPOT, STEREO_TRAY_POSITION } from '../utils/roomLayout'
@@ -17,11 +17,10 @@ export function RoomScene() {
   const wallColor = useRoomTuningStore((state) => state.wallColor)
   const wainscotColor = useRoomTuningStore((state) => state.wainscotColor)
   const floorColor = useRoomTuningStore((state) => state.floorColor)
-  const load = useRoomStore((state) => state.load)
   const focused = useRoomStore((state) => state.focused)
   const focus = useRoomStore((state) => state.focus)
   const back = useRoomStore((state) => state.back)
-  const burned = useBurnedCdsStore((state) => state.burned)
+  const { cds } = useComposedShelf()
   const refreshBurned = useBurnedCdsStore((state) => state.refresh)
 
   useEffect(() => {
@@ -43,7 +42,7 @@ export function RoomScene() {
         <RoomShell wallColor={wallColor} wainscotColor={wainscotColor} floorColor={floorColor} />
       </group>
       <CdShelf
-        cds={load.status === 'loaded' ? composeShelf(load.shelf, burned).cds : []}
+        cds={cds}
         interactive={focused === 'shelf'}
         onFocusShelf={() => focus('shelf')}
         position={SHELF_SPOT.position}

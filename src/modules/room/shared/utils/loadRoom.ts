@@ -1,9 +1,8 @@
+import { SHELF_SLOTS } from '../../../music/shared/utils/shelfSlots'
 import type { LoadRoomResult, RoomLoadError, RoomSource } from '../types/room'
 import { roomSchema } from './roomSchema'
 
 export const ROOM_SOURCES = ['/room.json', '/room.example.json'] as const
-
-const SHELF_SLOTS = 12
 
 type RoomFile =
   | { status: 'missing' }

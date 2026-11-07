@@ -1,10 +1,10 @@
 import { openDB, type DBSchema } from 'idb'
 import type { BurnedCdRecord, NewBurnedCd } from '../../shared/types/burnedCd'
 import { BURNED_CD_FORMAT_VERSION, burnedCdRecordSchema } from '../../shared/utils/burnedCdSchema'
+import { SHELF_SLOTS } from '../../shared/utils/shelfSlots'
 
 const DB_NAME = 'glimr'
 const STORE = 'burnedCds'
-const SHELF_SLOTS = 12
 
 interface GlimrDb extends DBSchema {
   burnedCds: { key: string; value: BurnedCdRecord }

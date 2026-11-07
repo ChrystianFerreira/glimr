@@ -16,12 +16,23 @@ type ContextMenuProps = {
 
 const EDGE_GAP = 8
 
+function focusIndex(key: string, current: number, count: number) {
+  switch (key) {
+    case 'Home':
+      return 0
+    case 'End':
+      return count - 1
+    case 'ArrowDown':
+      return (current + 1 + count) % count
+    default:
+      return (current - 1 + count) % count
+  }
+}
+
 function moveFocus(menu: HTMLElement, key: string) {
   const items = [...menu.querySelectorAll<HTMLElement>('[role="menuitem"]')]
   const current = items.indexOf(document.activeElement as HTMLElement)
-  const next =
-    key === 'Home' ? 0 : key === 'End' ? items.length - 1 : (current + (key === 'ArrowDown' ? 1 : -1) + items.length) % items.length
-  items[next]?.focus()
+  items[focusIndex(key, current, items.length)]?.focus()
 }
 
 /**

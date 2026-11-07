@@ -42,19 +42,10 @@ export function createBurnedCdsStore(deps: BurnedCdsDeps = DEFAULT_DEPS) {
   let latestRefresh = 0
   const forgotten = new Set<string>()
 
-  const toShelfCd = (record: BurnedCdRecord): BurnedShelfCd => {
-    const cover = record.cover ? deps.createUrl(record.cover) : null
-    if (cover) void deps.decodeCover(cover, record.title).then(() => deps.revokeUrl(cover))
-    return {
-      isBurned: true,
-      id: record.id,
-      title: record.title,
-      artist: record.artist,
-      audio: deps.createUrl(record.audio),
-      cover,
-      placeholderColor: record.placeholderColor,
-      burnedAt: record.burnedAt,
-    }
+  const toShelfCd = ({ audio, cover: coverBlob, id, title, artist, placeholderColor, burnedAt }: BurnedCdRecord): BurnedShelfCd => {
+    const cover = coverBlob ? deps.createUrl(coverBlob) : null
+    if (cover) void deps.decodeCover(cover, title).then(() => deps.revokeUrl(cover))
+    return { isBurned: true, id, title, artist, audio: deps.createUrl(audio), cover, placeholderColor, burnedAt }
   }
 
   return create<BurnedCdsStore>()((set, get) => ({

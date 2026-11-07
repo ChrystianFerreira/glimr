@@ -1,5 +1,5 @@
 import type { ChangeEvent, Ref } from 'react'
-import { BURN_ARTIST_MAX, BURN_TITLE_MAX, type BurnStatus, useBurnDraftStore } from '../../hooks/useBurnDraftStore'
+import { BURN_ARTIST_MAX, BURN_TITLE_MAX, type BurnStatus, isBusy, useBurnDraftStore } from '../../hooks/useBurnDraftStore'
 
 type BurnPanelProps = {
   shelfFull: boolean
@@ -42,7 +42,7 @@ export function BurnPanel({ shelfFull, roomCdCount, ref }: BurnPanelProps) {
   const burn = useBurnDraftStore((state) => state.burn)
 
   const burning = status.kind === 'burning'
-  const canBurn = !shelfFull && !burning && status.kind !== 'checking' && audio !== null && title.trim() !== ''
+  const canBurn = !shelfFull && !isBusy(status) && audio !== null && title.trim() !== ''
 
   const onAudioChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = pickedFile(event)

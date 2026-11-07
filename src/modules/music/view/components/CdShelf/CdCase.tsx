@@ -1,5 +1,5 @@
 import { type ThreeEvent, useFrame } from '@react-three/fiber'
-import { Suspense, use, useRef } from 'react'
+import { Suspense, use, useEffect, useRef } from 'react'
 import { Euler, type Group, MathUtils, Quaternion, type Texture, Vector3, type Vector3Tuple } from 'three'
 import { swallowNextClick } from '../../../../common/utils/overlayStack'
 import { paint } from '../../../../common/utils/paintVertexColors'
@@ -58,6 +58,8 @@ function Cover({ cd }: { cd: ShelfCd }) {
   )
 }
 
+type ScreenPoint = { clientX: number; clientY: number }
+
 type CdCaseProps = {
   cd: ShelfCd
   slotIndex: number
@@ -73,6 +75,8 @@ export function CdCase({ cd, slotIndex, trayInShelf, onClick, onOpenMenu }: CdCa
   const pressTimerRef = useRef<number | undefined>(undefined)
   const settledRef = useRef<{ slot: Vector3Tuple; tray: Vector3Tuple } | null>(null)
   const slotPosition = cdSlotPosition(slotIndex)
+
+  useEffect(() => () => window.clearTimeout(pressTimerRef.current), [])
 
   useFrame((_, delta) => {
     const group = groupRef.current
@@ -96,31 +100,31 @@ export function CdCase({ cd, slotIndex, trayInShelf, onClick, onOpenMenu }: CdCa
     settledRef.current = progressRef.current === target ? { slot: slotPosition, tray: trayInShelf } : null
   })
 
-  const press = (input: LongPressInput, x: number, y: number) => {
+  const press = (input: LongPressInput, { clientX, clientY }: ScreenPoint) => {
     const { state, effect } = nextLongPress(pressRef.current, input)
     pressRef.current = state
     if (effect.kind === 'startTimer') {
-      pressTimerRef.current = window.setTimeout(() => press({ type: 'timerElapsed' }, x, y), LONG_PRESS_MS)
+      pressTimerRef.current = window.setTimeout(() => press({ type: 'timerElapsed' }, { clientX, clientY }), LONG_PRESS_MS)
       return
     }
     if (effect.kind !== 'none') window.clearTimeout(pressTimerRef.current)
     if (effect.kind !== 'openMenu') return
     if (effect.swallowClick) swallowNextClick()
-    onOpenMenu?.(x, y)
+    onOpenMenu?.(clientX, clientY)
   }
 
-  const releasePress = (event: ThreeEvent<PointerEvent>) => press({ type: 'pointerUp' }, event.clientX, event.clientY)
+  const releasePress = (event: ThreeEvent<PointerEvent>) => press({ type: 'pointerUp' }, event)
 
   const menuHandlers = onOpenMenu && {
     onContextMenu: (event: ThreeEvent<MouseEvent>) => {
       event.nativeEvent.preventDefault()
       event.stopPropagation()
-      press({ type: 'contextMenu' }, event.clientX, event.clientY)
+      press({ type: 'contextMenu' }, event)
     },
     onPointerDown: (event: ThreeEvent<PointerEvent>) =>
-      press({ type: 'pointerDown', pointerType: event.pointerType, x: event.clientX, y: event.clientY }, event.clientX, event.clientY),
+      press({ type: 'pointerDown', pointerType: event.pointerType, x: event.clientX, y: event.clientY }, event),
     onPointerMove: (event: ThreeEvent<PointerEvent>) =>
-      press({ type: 'pointerMove', x: event.clientX, y: event.clientY }, event.clientX, event.clientY),
+      press({ type: 'pointerMove', x: event.clientX, y: event.clientY }, event),
     onPointerUp: releasePress,
     onPointerLeave: releasePress,
     onPointerCancel: releasePress,
