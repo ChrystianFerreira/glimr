@@ -56,6 +56,15 @@ describe('burnedCoverPlaceholder', () => {
     expect(luminance(context?.texts[0]?.color ?? '#ffffff')).toBeLessThan(0.3)
   })
 
+  it('keeps a long title within the cover, ending the last line with an ellipsis', () => {
+    burnedCoverPlaceholder('burned-long', 'One two three four five six seven eight nine ten eleven twelve', '#f4e1c1')
+
+    const lines = contexts[0]?.texts.map(({ text }) => text) ?? []
+    expect(lines).toHaveLength(4)
+    expect(lines.at(-1)).toMatch(/…$/)
+    expect(lines.every((line) => line.length * 10 <= 104)).toBe(true)
+  })
+
   it('reuses the texture for the same CD id', () => {
     const first = burnedCoverPlaceholder('burned-reuse', 'Again', '#f4e1c1')
 

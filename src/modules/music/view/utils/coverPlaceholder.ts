@@ -7,6 +7,7 @@ const LINE_HEIGHT = 24
 const BACKGROUND = '#4b2f86'
 const INK = '#f3e9d2'
 const BURNED_INK = '#1d1c24'
+const MAX_LINES = Math.floor((SIZE - PADDING * 2) / LINE_HEIGHT)
 
 const placeholders = new Map<string, Texture>()
 const burnedPlaceholders = new Map<string, Texture>()
@@ -24,6 +25,14 @@ function wrapWords(context: CanvasRenderingContext2D, text: string, maxWidth: nu
   return lines
 }
 
+function fitLines(context: CanvasRenderingContext2D, text: string, maxWidth: number) {
+  const lines = wrapWords(context, text, maxWidth)
+  if (lines.length <= MAX_LINES) return lines
+  let last = lines.slice(MAX_LINES - 1).join(' ')
+  while (last.length > 1 && context.measureText(`${last}…`).width > maxWidth) last = last.slice(0, -1).trimEnd()
+  return [...lines.slice(0, MAX_LINES - 1), `${last}…`]
+}
+
 function drawPlaceholder(title: string, background: string, ink: string): Texture {
   const canvas = document.createElement('canvas')
   canvas.width = SIZE
@@ -36,7 +45,7 @@ function drawPlaceholder(title: string, background: string, ink: string): Textur
     context.font = 'bold 22px Tahoma, Verdana, sans-serif'
     context.textAlign = 'center'
     context.textBaseline = 'middle'
-    const lines = wrapWords(context, title, SIZE - PADDING * 2)
+    const lines = fitLines(context, title, SIZE - PADDING * 2)
     const top = SIZE / 2 - ((lines.length - 1) * LINE_HEIGHT) / 2
     lines.forEach((line, index) => context.fillText(line, SIZE / 2, top + index * LINE_HEIGHT, SIZE - PADDING * 2))
   }

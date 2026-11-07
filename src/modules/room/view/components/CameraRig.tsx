@@ -7,7 +7,11 @@ import { cameraFov, FOCUS_POSES, poseFraming } from '../utils/focusPoses'
 
 const FIT_MARGIN = 1.12
 
-export function CameraRig() {
+type CameraRigProps = {
+  shelfBandHeight: number
+}
+
+export function CameraRig({ shelfBandHeight }: CameraRigProps) {
   const focused = useRoomStore((state) => state.focused)
   const viewportWidth = useThree((state) => state.size.width)
   const viewportHeight = useThree((state) => state.size.height)
@@ -25,14 +29,17 @@ export function CameraRig() {
     }
 
     const pose = FOCUS_POSES[focused]
-    const { center, toCamera, width, height, depth } = poseFraming(pose)
+    // Same test as index.css's `orientation: portrait`, where the burn panel becomes a bottom band.
+    const portrait = viewportHeight >= viewportWidth
+    const reservedBottom = focused === 'shelf' && portrait ? shelfBandHeight / viewportHeight : 0
+    const { center, toCamera, width, height, depth } = poseFraming(pose, reservedBottom)
     const distance = Math.max(controls.getDistanceToFitBox(width, height, depth) * FIT_MARGIN, pose.minDistance)
     const position = center.clone().addScaledVector(toCamera, distance)
-    const animate = framedRef.current !== null && framedRef.current !== focused
+    const animate = framedRef.current !== null && (framedRef.current !== focused || controls.active)
     framedRef.current = focused
 
     void controls.setLookAt(position.x, position.y, position.z, center.x, center.y, center.z, animate)
-  }, [controls, focused, getThree, viewportWidth, viewportHeight])
+  }, [controls, focused, getThree, viewportWidth, viewportHeight, shelfBandHeight])
 
   return <CameraControls ref={setControls} makeDefault enabled={false} />
 }

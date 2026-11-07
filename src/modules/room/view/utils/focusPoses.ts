@@ -84,11 +84,12 @@ export function cameraFov(aspect: number) {
 const WORLD_UP = new Vector3(0, 1, 0)
 
 /**
- * The box's extents as the camera sees it from the pose's direction, for `getDistanceToFitBox`.
+ * The box's extents as the camera sees it from the pose's direction, for `getDistanceToFitBox`, optionally keeping the bottom fraction of the view clear.
  * @example
  * const { center, toCamera, width, height, depth } = poseFraming(FOCUS_POSES.shelf)
+ * poseFraming(FOCUS_POSES.shelf, 0.35) // shelf fits in the top 65% of the view
  */
-export function poseFraming({ bounds, direction }: FocusPose) {
+export function poseFraming({ bounds, direction }: FocusPose, reservedBottom = 0) {
   const center = new Vector3(...boundsCenter(bounds))
   const half = new Vector3(...boundsSize(bounds)).multiplyScalar(0.5)
   const toCamera = new Vector3(...direction).normalize()
@@ -98,5 +99,9 @@ export function poseFraming({ bounds, direction }: FocusPose) {
   const extent = (axis: Vector3) =>
     2 * (Math.abs(half.x * axis.x) + Math.abs(half.y * axis.y) + Math.abs(half.z * axis.z))
 
-  return { center, toCamera, width: extent(right), height: extent(up), depth: extent(forward) }
+  const height = extent(up)
+  const framedHeight = height / (1 - reservedBottom)
+  center.addScaledVector(up, -(framedHeight - height) / 2)
+
+  return { center, toCamera, width: extent(right), height: framedHeight, depth: extent(forward) }
 }
