@@ -35,6 +35,7 @@ export function RoomScene() {
         interactive={focused === 'shelf'}
         onFocusShelf={() => focus('shelf')}
         position={SHELF_SPOT.position}
+        trayClickable={focused !== 'overview'}
         trayPosition={STEREO_TRAY_POSITION}
       />
       <group onClick={focusStereo} {...pointerCursor}>

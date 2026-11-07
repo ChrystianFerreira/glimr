@@ -21,12 +21,13 @@ type CdShelfProps = {
   interactive: boolean
   onFocusShelf: () => void
   position: Vec3
+  trayClickable: boolean
   trayPosition: Vec3
 }
 
 function ShelfBody({ onClick }: { onClick: (event: ThreeEvent<MouseEvent>) => void }) {
   return (
-    <group onClick={onClick}>
+    <group onClick={onClick} {...pointerCursor}>
       {[-1, 1].map((side) => (
         <mesh key={side} position={[side * (width / 2 - CD_SHELF_PANEL / 2), height / 2, 0]}>
           <boxGeometry args={[CD_SHELF_PANEL, height, depth]} ref={paint(WOOD_SHADOW, WOOD_COLOR)} />
@@ -55,8 +56,9 @@ function ShelfBody({ onClick }: { onClick: (event: ThreeEvent<MouseEvent>) => vo
   )
 }
 
-export function CdShelf({ cds, interactive, onFocusShelf, position, trayPosition }: CdShelfProps) {
+export function CdShelf({ cds, interactive, onFocusShelf, position, trayClickable, trayPosition }: CdShelfProps) {
   const select = usePlaybackStore((state) => state.select)
+  const inTray = usePlaybackStore((state) => state.inTray)
 
   const focusShelf = (event: ThreeEvent<MouseEvent>) => {
     event.stopPropagation()
@@ -70,10 +72,16 @@ export function CdShelf({ cds, interactive, onFocusShelf, position, trayPosition
   }
 
   return (
-    <group position={position} {...pointerCursor}>
+    <group position={position}>
       <ShelfBody onClick={focusShelf} />
       {cds.map((cd, index) => (
-        <CdCase key={cd.id} cd={cd} slotIndex={index} trayPosition={trayPosition} onClick={clickCd(cd)} />
+        <CdCase
+          key={cd.id}
+          cd={cd}
+          slotIndex={index}
+          trayPosition={trayPosition}
+          onClick={cd.id !== inTray || trayClickable ? clickCd(cd) : undefined}
+        />
       ))}
     </group>
   )

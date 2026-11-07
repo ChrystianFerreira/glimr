@@ -2,6 +2,7 @@ import { type ThreeEvent, useFrame } from '@react-three/fiber'
 import { Suspense, use, useRef } from 'react'
 import { Euler, type Group, MathUtils, Quaternion, type Texture, Vector3 } from 'three'
 import { paint } from '../../../../common/utils/paintVertexColors'
+import { pointerCursor } from '../../../../common/utils/pointerCursor'
 import type { Cd } from '../../../shared/types/cd'
 import { usePlaybackStore } from '../../hooks/usePlaybackStore'
 import { CD_CASE_LEAN, CD_CASE_SIZE, cdSlotPosition } from '../../utils/cdShelfLayout'
@@ -45,7 +46,7 @@ type CdCaseProps = {
   cd: Cd
   slotIndex: number
   trayPosition: [number, number, number]
-  onClick: (event: ThreeEvent<MouseEvent>) => void
+  onClick?: (event: ThreeEvent<MouseEvent>) => void
 }
 
 export function CdCase({ cd, slotIndex, trayPosition, onClick }: CdCaseProps) {
@@ -71,7 +72,7 @@ export function CdCase({ cd, slotIndex, trayPosition, onClick }: CdCaseProps) {
   })
 
   return (
-    <group ref={groupRef} onClick={onClick}>
+    <group ref={groupRef} {...(onClick ? { onClick, ...pointerCursor } : {})}>
       <mesh>
         <boxGeometry args={[CD_CASE_SIZE.width, CD_CASE_SIZE.height, CD_CASE_SIZE.thickness]} ref={paint(CASE_SHADOW, CASE_COLOR)} />
         <meshBasicMaterial vertexColors />
