@@ -1,6 +1,7 @@
 import { Canvas } from '@react-three/fiber'
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { renderScale } from '../../../common/utils/renderScale'
+import { NowPlayingStrip } from '../../../music/view/components/NowPlayingStrip'
 import { loadRoom } from '../../shared/utils/loadRoom'
 import { useRoomStore } from '../hooks/useRoomStore'
 import { useRoomTuningStore } from '../hooks/useRoomTuningStore'
@@ -49,6 +50,7 @@ export function RoomViewPage() {
         <RoomScene />
       </Canvas>
       <BackButton />
+      <NowPlayingStrip />
       <RoomErrorBanner />
       {DevTools && (
         <Suspense fallback={null}>

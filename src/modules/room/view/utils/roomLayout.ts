@@ -1,3 +1,5 @@
+import { CD_SHELF_SIZE } from '../../../music/view/utils/cdShelfLayout'
+
 export type Vec3 = [number, number, number]
 
 export const ROOM_SIZE = { width: 6, height: 3, depth: 6 }
@@ -16,9 +18,9 @@ export const STEREO_TRAY_POSITION: Vec3 = [
 ]
 
 export const SHELF_SPOT: { position: Vec3; width: number; height: number } = {
-  position: [-1.5, 0, -2.85],
-  width: 1.6,
-  height: 1.9,
+  position: [-1.5, 0, -ROOM_SIZE.depth / 2 + CD_SHELF_SIZE.depth / 2],
+  width: CD_SHELF_SIZE.width,
+  height: CD_SHELF_SIZE.height,
 }
 
 export const OVERVIEW_CAMERA: { position: Vec3; target: Vec3; fov: number } = {

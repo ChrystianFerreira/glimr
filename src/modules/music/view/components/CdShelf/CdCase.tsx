@@ -1,0 +1,91 @@
+import { type ThreeEvent, useFrame } from '@react-three/fiber'
+import { Suspense, use, useRef } from 'react'
+import { Euler, type Group, MathUtils, Quaternion, type Texture, Vector3 } from 'three'
+import { paint } from '../../../../common/utils/paintVertexColors'
+import type { Cd } from '../../../shared/types/cd'
+import { usePlaybackStore } from '../../hooks/usePlaybackStore'
+import { CD_CASE_LEAN, CD_CASE_SIZE, cdSlotPosition } from '../../utils/cdShelfLayout'
+import { coverPlaceholder } from '../../utils/coverPlaceholder'
+import { loadCover } from '../../utils/loadCover'
+
+const CASE_COLOR = '#aeb6c8'
+const CASE_SHADOW = '#5d6478'
+const SPINE_COLOR = '#1d1c24'
+const SPINE_WIDTH = 0.03
+const HIT_BOX: [number, number, number] = [0.36, 0.4, 0.1]
+
+const TRAVEL_SECONDS = 0.7
+const ARC_HEIGHT = 0.35
+const TRAY_SCALE = 0.75
+const TRAY_OUTSET = 0.06
+
+const SLOT_ROTATION = new Quaternion().setFromEuler(new Euler(CD_CASE_LEAN, 0, 0))
+const TRAY_ROTATION = new Quaternion().setFromEuler(new Euler(-Math.PI / 2, 0, 0))
+const slot = new Vector3()
+const tray = new Vector3()
+
+const coverWidth = CD_CASE_SIZE.width - SPINE_WIDTH - 0.015
+const coverHeight = CD_CASE_SIZE.height - 0.02
+const coverX = SPINE_WIDTH / 2
+
+function CoverFace({ texture }: { texture: Texture }) {
+  return (
+    <mesh position={[coverX, 0, CD_CASE_SIZE.thickness / 2 + 0.002]}>
+      <planeGeometry args={[coverWidth, coverHeight]} />
+      <meshBasicMaterial map={texture} />
+    </mesh>
+  )
+}
+
+function LoadedCover({ cd }: { cd: Cd }) {
+  return <CoverFace texture={use(loadCover(cd.cover, cd.title))} />
+}
+
+type CdCaseProps = {
+  cd: Cd
+  slotIndex: number
+  trayPosition: [number, number, number]
+  onClick: (event: ThreeEvent<MouseEvent>) => void
+}
+
+export function CdCase({ cd, slotIndex, trayPosition, onClick }: CdCaseProps) {
+  const groupRef = useRef<Group>(null)
+  const progressRef = useRef(0)
+  const slotPosition = cdSlotPosition(slotIndex)
+
+  useFrame((_, delta) => {
+    const group = groupRef.current
+    if (!group?.parent) return
+
+    const inTray = usePlaybackStore.getState().inTray === cd.id
+    const step = delta / TRAVEL_SECONDS
+    progressRef.current = MathUtils.clamp(progressRef.current + (inTray ? step : -step), 0, 1)
+    const t = MathUtils.smootherstep(progressRef.current, 0, 1)
+
+    slot.set(...slotPosition)
+    group.parent.worldToLocal(tray.set(trayPosition[0], trayPosition[1], trayPosition[2] + TRAY_OUTSET))
+    group.position.lerpVectors(slot, tray, t)
+    group.position.y += Math.sin(Math.PI * t) * ARC_HEIGHT
+    group.quaternion.slerpQuaternions(SLOT_ROTATION, TRAY_ROTATION, t)
+    group.scale.setScalar(MathUtils.lerp(1, TRAY_SCALE, t))
+  })
+
+  return (
+    <group ref={groupRef} onClick={onClick}>
+      <mesh>
+        <boxGeometry args={[CD_CASE_SIZE.width, CD_CASE_SIZE.height, CD_CASE_SIZE.thickness]} ref={paint(CASE_SHADOW, CASE_COLOR)} />
+        <meshBasicMaterial vertexColors />
+      </mesh>
+      <mesh position={[-CD_CASE_SIZE.width / 2 + SPINE_WIDTH / 2, 0, 0]}>
+        <boxGeometry args={[SPINE_WIDTH, CD_CASE_SIZE.height + 0.002, CD_CASE_SIZE.thickness + 0.004]} ref={paint(SPINE_COLOR)} />
+        <meshBasicMaterial vertexColors />
+      </mesh>
+      <Suspense fallback={<CoverFace texture={coverPlaceholder(cd.title)} />}>
+        <LoadedCover cd={cd} />
+      </Suspense>
+      <mesh visible={false}>
+        <boxGeometry args={HIT_BOX} />
+      </mesh>
+    </group>
+  )
+}
